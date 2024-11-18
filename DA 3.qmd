@@ -12,7 +12,6 @@ execute:
 columns: 2
 format:
   pdf: 
-    extensions-dir: quarto-wordcount/_extensions/wordcount
     fig-align: center
     fig-width: 6
     fig-height: 4
@@ -22,12 +21,45 @@ editor:
     wrap: sentence
 ---
 
+```{r, , fig.pos="H"}
+#| label: data-setup
+#| echo: false
+#| eval: true
+
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(naniar)
+library(reshape2)
+library(GGally)
+library(janitor)
+
+data <- read.csv("data.csv")
+# Placeholder of original data
+origdata <- data
+data <- data %>%
+  mutate(across(everything(), ~ ifelse(. %in% c(".", ""), NA, .)))
+
+
+```
+
+```{r, , fig.pos="H"}
+#| label: Scratch-work
+#| echo: false
+#| eval: false
+
+length(unique(na.omit(data$Sire)))
+length(unique(na.omit(data$Development.Treatment)))
+sum(rowSums(is.na(data)) > 0)
+
+```
+
+
 # Introduction
 
-In this paper we will be looking at data related to calves.  The data comes from an experiment designed to study the impact dietary treatments given to pregnant heifers had on the development of the calves.  The study was conducted over a three year period and involved three different dietary treatments given to select groups of heifers in the final trimester.  In total the data has 22 variables for 120 entires, though some data points are missing.
+In this paper we will be looking at data related to calves.  The data comes from an experiment designed to study the impact dietary treatments given to pregnant heifers had on the development of the calves.  The study was conducted over a three year period and involved three different dietary treatments given to select groups of heifers in the final trimester.  In total the data has 22 variables for 120 entries, though some data points are missing.
 
 For more information on the experiment, the data, or any other files used in this paper see our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825) which can be found at https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825.  The coding languages used in the paper are R and SAS.  The corresponding code can be found in *Appendix A - R Code* and *Appendix B - SAS Code* respectively.
-
 
 
 # Exploring the Data
@@ -45,132 +77,81 @@ Other variables, such as the id of the calf, length of gestation for the heifer,
 The client's main focus is the effect the third trimester treatment and the sex of a calf have on the calf's vigor score, ease of birth score, and final body weight.  Therefore, these are the variables we will place more of an emphasis on, while exploring the effect some of the other variables may have.
 
 
+## Missing Values
+
+**UPDATE THIS AFTER SEEING WHAT VARIABLES ARE NEEDED FOR THE MODEL**
+
+
+The data contains some missing values.  @fig-missing-data shows which columns have the most missing data.  As we can see the values for the variable `DMI`, which according to the USDA represents the dry matter intake for a cow, is missing for two-thirds of the entries. (@USDA). Given the number of missing values is this large, it is probably best to not use this variable in our models.  Some other variables, including the final body weight of the calf represented by `Final.Calf.BW`, are missing in 19 entries.  Of the other four variables the client was most interested in, none have more than ten missing values.    
+
 ```{r, , fig.pos="H"}
-#| label: data-setup
+#| label: fig-missing-data
+#| fig-cap: "Chart counting the number of missing values for each variable within the data."
 #| echo: false
 #| eval: true
 
-library(knitr)
-library(dplyr)
-library(ggplot2)
-data <- read.csv("data.csv")
-origdata <- data
-data <- data %>%
-  mutate(across(everything(), ~ ifelse(. %in% c(".", ""), NA, .)))
-# May need to add more later.
-neededvars <- c("Calan.Treatment", "SEX", "Final.Calf.BW", "Calving.Ease", "Calf.Vigor")
-data <- data[complete.cases(data[, neededvars]), ]
-```
-
-```{r, , fig.pos="H"}
-#| label: Scratch-work
-#| echo: false
-#| eval: false
-
-
-
-length(unique(na.omit(data$Sire)))
-length(unique(na.omit(data$Development.Treatment)))
-sum(rowSums(is.na(data)) > 0)
-
-```
-
-
-```{r, , fig.pos="H"}
-#| label: data-setup
-#| echo: false
-#| eval: true
-
-library(knitr)
-library(dplyr)
-library(ggplot2)
-setwd("C:/Users/mtoma2/Documents/Fall 24/Stat 825/Data Analysis/DataAnalysis3-STAT325-825")
-data <- read.csv("data.csv")
-
-
-
-origdata <- data
-data <- data %>%
-  mutate(across(everything(), ~ ifelse(. %in% c(".", ""), NA, .)))
-# May need to add more later.
-neededvars <- c("Calan.Treatment", "SEX", "Final.Calf.BW", "Calving.Ease", "Calf.Vigor")
-data <- data[complete.cases(data[, neededvars]), ]
-
-```
-
-## Misiing Value
-Initially the dataset has missing values in the following columns:
-Pen #: 4 missing values
-DMI: 36 missing values
-SEX: 1 missing value
-
-The heatmap above visualizes the distribution of missing data in the dataset. Columns with missing values (e.g., "Pen #", "DMI", and "SEX") are marked with red line gaps.
-```{r, , fig.pos="H"}
-#| label: Scratch-work
-#| echo: false
-#| eval: false
-
-# Load necessary libraries
-library(ggplot2)
-library(naniar)
-
-# Assuming your dataset is named `data`
-# Visualize missing data distribution
 gg_miss_var(data) +
   ggtitle("Missing Data Distribution") +
   theme_minimal()
 
-#2. Heatmap
-# Load necessary libraries
-library(ggplot2)
-library(reshape2)
+```
 
-# Assuming your dataset is named `data`
-# Create a binary matrix indicating missing values
-missing_matrix <- is.na(data)
-
-# Convert the missing matrix to a long format for visualization
-missing_data_long <- melt(missing_matrix)
-colnames(missing_data_long) <- c("Row", "Column", "Missing")
-
-# Create the heatmap
-ggplot(missing_data_long, aes(x = Column, y = Row, fill = Missing)) +
-  geom_tile(color = "white") +
-  scale_fill_manual(values = c("FALSE" = "grey", "TRUE" = "red"), 
-                    name = "Missing") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  ggtitle("Missing Data Heatmap")
+**UPDATE THIS AFTER SEEING WHAT VARIABLES ARE NEEDED FOR THE MODEL - WE MAY NEED TO REMOVE/SOOTH OVER MORE.**
 
 
+```{r, , fig.pos="H"}
+#| label: fig-heatmap
+#| fig-cap: "Heatmap of missing data."
+#| echo: false
+#| eval: true
 
+# # Assuming your dataset is named `data`
+# # Create a binary matrix indicating missing values
+# missing_matrix <- is.na(data)
+# 
+# # Convert the missing matrix to a long format for visualization
+# missing_data_long <- melt(missing_matrix)
+# colnames(missing_data_long) <- c("Row", "Column", "Missing")
+# 
+# # Create the heatmap
+# ggplot(missing_data_long, aes(x = Column, y = Row, fill = Missing)) +
+#   geom_tile(color = "white") +
+#   scale_fill_manual(values = c("FALSE" = "grey", "TRUE" = "red"), 
+#                     name = "Missing") +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1),
+#         axis.title.x = element_blank(),
+#         axis.title.y = element_blank()) +
+#   ggtitle("Missing Data Heatmap")
 
-length(unique(na.omit(data$Sire)))
-length(unique(na.omit(data$Development.Treatment)))
-sum(rowSums(is.na(data)) > 0)
 
 ```
 
-# Cleaning the dataset
-This code cleans a dataset by replacing all occurrences of . with NA to standardize missing values. It ensures columns are assigned the correct data types, converting numeric-like columns to numeric and others to factor. Missing values are handled by imputing the median for numeric columns and the mode for factor columns. After cleaning, the code verifies that no missing values remain in the dataset.
-```{r}
-# Load dplyr for data manipulation
-library(dplyr)
 
-# Step 1: Replace all "." with NA in the dataset
-data_cleaned <- data  # Assuming `data` is your original dataset
-data_cleaned[data_cleaned == "."] <- NA
+## Cleaning the dataset
 
-# Step 2: Convert columns to appropriate types (numeric or factor)
+This code cleans a data set by replacing all occurrences of . with NA to standardize missing values. It ensures columns are assigned the correct data types, converting numeric-like columns to numeric and others to factor. Missing values are handled by imputing the median for numeric columns and the mode for factor columns. After cleaning, the code verifies that no missing values remain in the data set.
+
+
+To clean the data set we chose to impute the missing values with the mean of their respective variable rather than remove the entries all together.
+
+```{r,,fig.pos="H"}
+#| label: fig-notsure-2
+#| echo: false
+#| eval: true
+
+data_cleaned <- data 
+# There was one instance of a blank entry so I modified the code
+data_cleaned <- data %>%
+  mutate(across(everything(), ~ ifelse(. %in% c(".", ""), NA, .)))
+
+
 data_cleaned <- data_cleaned %>%
   mutate(across(everything(), ~ if (all(!is.na(.x) & grepl("^[0-9.]+$", .x))) {
                                       as.numeric(.x)
                                     } else {
                                       as.factor(.x)
                                     }))
-
 
 # Step 3: Impute missing values
 # Define a function to calculate the mode
@@ -179,6 +160,7 @@ get_mode <- function(x) {
   unique_x[which.max(tabulate(match(x, unique_x)))]
 }
 
+###### This is not imputing anything since the code above converts the "." entries to NA.
 # Impute missing values
 data_cleaned <- data_cleaned %>%
   mutate(across(where(is.numeric), ~ ifelse(is.na(.), median(., na.rm = TRUE), .))) %>%
@@ -189,25 +171,29 @@ missing_values_after_cleaning <- sum(is.na(data_cleaned))
 print(paste("Remaining missing values: ", missing_values_after_cleaning))
 
 # Step 5: Save the cleaned dataset to a CSV file
-write.csv(data_cleaned, "cleaned_data.csv", row.names = FALSE)
+#write.csv(data_cleaned, "cleaned_data.csv", row.names = FALSE)
 
-View(data_cleaned)
+#View(data_cleaned)
 # Save to the Desktop (modify based on your system)
-write.csv(data_cleaned, "C:/Users/mtoma2/Desktop/cleaned_data.csv", row.names = FALSE)
+#write.csv(data_cleaned, "C:/Users/mtoma2/Desktop/cleaned_data.csv", row.names = FALSE)
 
 
 ```
 
 
 ## Summary Statistics
-```{r}
-library(GGally)
+
+```{r,,fig.pos="H"}
+#| label: fig-notsure2
+#| echo: false
+#| eval: true
+
 # Summary statistics for numerical variables
-summary_stats_num <- cleaned_data %>%
+summary_stats_num <- data_cleaned %>%
   summarise(across(where(is.numeric), list(mean = mean, sd = sd, min = min, max = max, median = median), na.rm = TRUE))
 
 # Summary statistics for categorical variables
-summary_stats_cat <- cleaned_data %>%
+summary_stats_cat <- data_cleaned %>%
   summarise(across(where(is.factor), ~ n_distinct(.)))
 
 print("Summary Statistics for Numerical Variables")
@@ -220,25 +206,25 @@ print(summary_stats_cat)
 
 
 
-# Exploring the Data
+## Exploring the Data
 
 ```{r, , fig.pos="H"}
-#| label: Scratch work
+#| label: fig-notsure-3
 #| echo: false
-#| eval: false
-
-library(janitor)
+#| eval: true
+#| layout-ncol: 4
+#| layout-nrow: 5
 
 # Clean column names
-cleaned_data <- cleaned_data %>% clean_names()
+data_cleaned <- data_cleaned %>% clean_names()
 
 
 # Select numerical variables
-numeric_vars <- cleaned_data %>% select(where(is.numeric))
+numeric_vars <- data_cleaned %>% select(where(is.numeric))
 
 # Plot histograms for all numerical variables
 for (col in colnames(numeric_vars)) {
-  p <- ggplot(cleaned_data, aes_string(x = col)) +
+  p <- ggplot(data_cleaned, aes_string(x = col)) +
     geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
     labs(title = paste("Distribution of", col), x = col, y = "Frequency") +
     theme_minimal() +
@@ -250,29 +236,6 @@ for (col in colnames(numeric_vars)) {
 
 
 ```
-
-
-## Variables
-
-As mentioned above the experiment used three different dietary treatments.  These were DDG, CON, and MET.  For the first two trimesters the heifers were given one of seven developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.  This is recorded in the `Calan.Treatment` column of the data set.  
-
-The heifers were placed into one of four pens by weight, which can be seen in the column `Pen #`.  They were then artificially inseminated from an assigned sire, which we will assume was done randomly since the client says weight was not a factor.  The sire is represented by the column of the same name and has six unique entries.
-
-Upon the birth of the calves, several measurements were taken.  These include the sex of the calf, weights taken at both birth and slaughter, and scores of both the calf's vigor and the ease of birth.  The variable names line up with these descriptions.
-
-Other variables, such as the id of the calf, length of gestation for the heifer, and postmortem scoring such as hot carcass weight (HCW) are included as well.  (@UNLBeef).  Note two birthdays are included in the data, `Birth.date` and `Birth.date.1`.  These variables will not be used in the models below so no further investigation was done on our part to determine the differences.  
-
-The client's main focus is the effect the third trimester treatment and the sex of a calf have on the calf's vigor score, ease of birth score, and final body weight.  Therefore, these are the variables we will place more of an emphasis on, while exploring the effect some of the other variables may have.
-
-
-## Missing Data
-
-**UPDATE THIS AFTER SEEING WHAT VARIABLES ARE NEEDED FOR THE MODEL**
-
-The data contains some missing values.  In regards to the five variables the client is most interested in, 19 entries are missing one or more values.  Since that still leaves 101 entries with all five variables 
-
-
-
 
 
 
@@ -302,12 +265,18 @@ The data contains some missing values.  In regards to the five variables the cli
 ## Relationships among variables
 
 # Potential models
-```{r}
+
+## Model 1
+
+```{r, , fig.pos="H"}
+#| label: fig-notsure4
+#| echo: false
+#| eval: true
 # Ensure calan_treatment and sex are factors
-cleaned_data$calan_treatment <- as.factor(cleaned_data$calan_treatment)
-cleaned_data$sex <- as.factor(cleaned_data$sex)
+data_cleaned$calan_treatment <- as.factor(data_cleaned$calan_treatment)
+data_cleaned$sex <- as.factor(data_cleaned$sex)
 # ANCOVA for Final Body Weight
-model <- aov(`final_calf_bw` ~ `calan_treatment` * sex + `initial_bw`, data = cleaned_data)
+model <- aov(final_calf_bw ~ calan_treatment * sex + initial_bw, data = data_cleaned)
 summary(model)
 
 # Tukey's HSD for factors only
@@ -318,15 +287,19 @@ TukeyHSD(model, which = c("calan_treatment", "sex"))
 ```
 
 
-```{r}
+```{r, , fig.pos="H"}
+#| label: fig-notsure-5
+#| echo: false
+#| eval: true
+#| 
 # ANCOVA for Final Body Weight
-model <- aov(`Final Calf BW` ~ `Calan Treatment` * SEX + `Initial BW`, data = imputed_data)
+model <- aov(final_calf_bw ~ calan_treatment * sex + initial_bw, data = data_cleaned)
 summary(model)
 
 ```
 
 
-## Model 1
+
 
 
 
