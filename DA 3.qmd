@@ -38,23 +38,40 @@ data <- read.csv("data.csv")
 #| echo: false
 #| eval: false
 
+length(unique(data$Sire))
+length(unique(data$Development.Treatment))
+
 ```
 
 # Introduction
 
+In this paper we will be looking at data related to calves.  The data comes from an experiment designed to study the impact dietary treatments given to pregnant heifers had on the development of the calves.  The study was conducted over a three year period and involved three different dietary treatments given to select groups of heifers in the final trimester.  In total the data has 22 variables for 120 entires, though some data points are missing.
 
-The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825) which can be found at https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825.
+For more information on the experiment, the data, or any other files used in this paper see our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825) which can be found at https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825.  The coding languages used in the paper are R and SAS.  The corresponding code can be found in *Appendix A - R Code* and *Appendix B - SAS Code* respectively.
+
+
 
 # Exploring the Data
 
 ## Variables
 
-Columns in data set can be typed like `column`.
+As mentioned above the experiment used three different dietary treatments.  These were DDG, CON, and MET.  For the first two trimesters the heifers were given one of eight developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.  This is recorded in the `Calan.Treatment` column of the data set.  
 
-### POTENTIAL Changes made to the variables in the original data set
+The heifers were placed into one of four pens by weight, which can be seen in the column `Pen #`.  They were then artificially inseminated from an assigned sire, which we will assume was done randomly since the client says weight was not a factor.  The sire is represented by the column of the same name and has seven unique entries.
+
+Upon the birth of the calves, several measurements were taken.  These include the sex of the calf, weights taken at both birth and slaughter, and scores of both the calf's vigor and the ease of birth.  The variable names line up with these descriptions.
+
+Other variables, such as the id of the calf, length of gestation for the heifer, and postmortem scoring such as hot carcass weight (HCW) are included as well.  (@UNLBeef).  Note two birthdays are included in the data, `Birth.date` and `Birth.date.1`.  These variables will not be used in the models below so no further investigation was done on our part to determine the differences.  
+
+
+## Missing Data
+
+The data contains several instances of missing values.
+
 
 ## Summary Statistics
 
+The client's main focus is the effect the third trimester treatment and the sex of a calf have on the calf's vigor score, ease of birth score, and final body weight.
 
 ```{r, , fig.pos="H"}
 #| label: fig-summarystats
@@ -94,7 +111,7 @@ $$
 
 where $y_{ijklm}$ represents the *dependent variable*, ...
 
-![Picture of SAS Output](filename.png){width="3in"}
+```![Picture of SAS Output](filename.png){width="3in"}```
 
 # Conclusion
 
@@ -132,4 +149,4 @@ where $y_{ijklm}$ represents the *dependent variable*, ...
 
 
 
-![](filename.png)
+```![](filename.png)```
