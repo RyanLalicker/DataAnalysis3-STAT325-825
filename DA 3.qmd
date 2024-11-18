@@ -87,6 +87,15 @@ library(ggplot2)
 setwd("C:/Users/mtoma2/Documents/Fall 24/Stat 825/Data Analysis/DataAnalysis3-STAT325-825")
 data <- read.csv("data.csv")
 
+
+
+origdata <- data
+data <- data %>%
+  mutate(across(everything(), ~ ifelse(. %in% c(".", ""), NA, .)))
+# May need to add more later.
+neededvars <- c("Calan.Treatment", "SEX", "Final.Calf.BW", "Calving.Ease", "Calf.Vigor")
+data <- data[complete.cases(data[, neededvars]), ]
+
 ```
 
 ## Misiing Value
@@ -97,7 +106,7 @@ SEX: 1 missing value
 
 The heatmap above visualizes the distribution of missing data in the dataset. Columns with missing values (e.g., "Pen #", "DMI", and "SEX") are marked with red line gaps.
 ```{r, , fig.pos="H"}
-#| label: Scratch work
+#| label: Scratch-work
 #| echo: false
 #| eval: false
 
@@ -136,6 +145,12 @@ ggplot(missing_data_long, aes(x = Column, y = Row, fill = Missing)) +
   ggtitle("Missing Data Heatmap")
 
 
+
+
+length(unique(na.omit(data$Sire)))
+length(unique(na.omit(data$Development.Treatment)))
+sum(rowSums(is.na(data)) > 0)
+
 ```
 
 # Cleaning the dataset
@@ -155,6 +170,7 @@ data_cleaned <- data_cleaned %>%
                                     } else {
                                       as.factor(.x)
                                     }))
+
 
 # Step 3: Impute missing values
 # Define a function to calculate the mode
@@ -202,6 +218,8 @@ print(summary_stats_cat)
 ```
 
 
+
+
 # Exploring the Data
 
 ```{r, , fig.pos="H"}
@@ -236,9 +254,24 @@ for (col in colnames(numeric_vars)) {
 
 ## Variables
 
-Columns in data set can be typed like `column`.
+As mentioned above the experiment used three different dietary treatments.  These were DDG, CON, and MET.  For the first two trimesters the heifers were given one of seven developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.  This is recorded in the `Calan.Treatment` column of the data set.  
 
-### POTENTIAL Changes made to the variables in the original data set
+The heifers were placed into one of four pens by weight, which can be seen in the column `Pen #`.  They were then artificially inseminated from an assigned sire, which we will assume was done randomly since the client says weight was not a factor.  The sire is represented by the column of the same name and has six unique entries.
+
+Upon the birth of the calves, several measurements were taken.  These include the sex of the calf, weights taken at both birth and slaughter, and scores of both the calf's vigor and the ease of birth.  The variable names line up with these descriptions.
+
+Other variables, such as the id of the calf, length of gestation for the heifer, and postmortem scoring such as hot carcass weight (HCW) are included as well.  (@UNLBeef).  Note two birthdays are included in the data, `Birth.date` and `Birth.date.1`.  These variables will not be used in the models below so no further investigation was done on our part to determine the differences.  
+
+The client's main focus is the effect the third trimester treatment and the sex of a calf have on the calf's vigor score, ease of birth score, and final body weight.  Therefore, these are the variables we will place more of an emphasis on, while exploring the effect some of the other variables may have.
+
+
+## Missing Data
+
+**UPDATE THIS AFTER SEEING WHAT VARIABLES ARE NEEDED FOR THE MODEL**
+
+The data contains some missing values.  In regards to the five variables the client is most interested in, 19 entries are missing one or more values.  Since that still leaves 101 entries with all five variables 
+
+
 
 
 
@@ -303,7 +336,7 @@ $$
 
 where $y_{ijklm}$ represents the *dependent variable*, ...
 
-![Picture of SAS Output](filename.png){width="3in"}
+```![Picture of SAS Output](filename.png){width="3in"}```
 
 # Conclusion
 
@@ -341,4 +374,4 @@ where $y_{ijklm}$ represents the *dependent variable*, ...
 
 
 
-![](filename.png)
+```![](filename.png)```
