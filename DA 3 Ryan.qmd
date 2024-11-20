@@ -35,6 +35,10 @@ library(GGally)
 library(janitor)
 library(emmeans)
 library(MASS)
+library(multcomp)
+library(lme4)
+library(nnet)
+library(gridExtra)
 
 data <- read.csv("data.csv")
 # Placeholder of original data
@@ -163,8 +167,6 @@ for (var in names(df)) {
 
 To clean up the data set let's first focus on some of the quantitative variables.  For these we can impute the missing values with the median or mean.  We will use the median due to the its greater resistance to potential outliers.  This reduces the number of rows with at least one missing variable to 15.  Much of the improvement comes from `DMI` being a quantitative variable, but to reiterate what was discussed earlier, this variable will not be used in any models.
 
-**RYAN SAYS NO IMPUTING CATEGORICAL VARS TOMA SAYS USE MODE - WE NEED TO PICK ONE**
-
 The categorical variables are not as simple.  Let's consider the third trimester treatment.  The MET treatment was used in 40 cases, while the other two treatments were only used 38 times, meaning there are four missing values.  If we used the mode as @MEMON2023101382 suggests, this would make 42 instances of the MET treatment.  However, it seems very possible that the missing entries were split between the CON and DDG treatments to make an even 40 uses each.  For this reason, rows with missing values for the categorical variables used in the model will be removed.  This results in the models using 113 entries of the original 120, which is something we are comfortable with.
 
 **RETURN AND VARIFY NUMBERS BEFORE SUBMITTING.**
@@ -184,51 +186,176 @@ cleaned_data <- data[complete.cases(data[, cat_used]), ]
 
 ## Summary Statistics
 
+Let's take a closer look at what the three dependent variables the client is interested in.  @fig-summary-stats shows several summary statistics for each.  The calving ease and calf vigor are each scores given.  Looking at the minimum and maximum values of each it would seem they are scored in a three-point and five-point system respectively, both only using integers.  We can also see from the median and 75th percentiles that both seem very skewed towards the low end of the scale.  While the imputing done previously may be exaggerating the curve, @fig-missing-data shows less than ten values were imputed.  This indicates to us the skew was already present before cleaning the data.
+
 
 ```{r, , fig.pos="H"}
-#| label: fig-summarystats
+#| label: fig-summary-stats
 #| echo: false
 #| eval: true
 
-# Summary statistics for numerical variables
-summary_stats_num <- cleaned_data %>%
-  summarise(across(where(is.numeric), list(mean = mean, sd = sd, min = min, max = max, median = median), na.rm = TRUE))
+dep_vars <- c("Calving.Ease", "Calf.Vigor", "Final.Calf.BW")
 
-# Summary statistics for categorical variables
-summary_stats_cat <- cleaned_data %>%
-  summarise(across(where(is.factor), ~ n_distinct(.)))
+custom_names <- c("Calving Ease", "Calf Vigor", "Final Calf Weight")
 
-print("Summary Statistics for Numerical Variables")
-print(summary_stats_num)
-print("Summary Statistics for Categorical Variables")
-print(summary_stats_cat)
+calc_stats <- function(var) {
+  mean_val <- mean(var, na.rm = TRUE)
+  median_val <- median(var, na.rm = TRUE)
+  sd_val <- sd(var, na.rm = TRUE)
+  quantiles <- quantile(var, probs = c(0.25, 0.75), na.rm = TRUE)
+  max <- max(var, na.rm = TRUE)
+  min <- min(var, na.rm = TRUE)
+  c(mean = mean_val, median = median_val, sd = sd_val, Q1 = quantiles[1], Q3 = quantiles[2], Min = min, Max = max)
+}
+
+summary_table <- t(sapply(dep_vars, function(var) calc_stats(cleaned_data[[var]])))
+
+summary_table <- as.data.frame(summary_table)
+
+kable(summary_table, col.names = c("Variable", "Mean", "Median", "SD", "25th Percentile", "75th Percentile", "Min", "Max"), 
+      caption = "Summary Statistics for Dependent Variables")
+
+```
+
+The final weight of calf is the third variable in @fig-summary-stats.  The mean and median are relatively similar given the large standard deviation.  While the previous two variables discussed had some concerns on top of being counting variables on a scale, the final weight does not present the same issues.  Further investigation into the approximate distribution of the final weight is needed though.
+
+Let's look at a histogram and a Q-Q plot for the final weight of the calves in @fig-normality.  The bin width for the histogram comes from the Freedman-Diaconis rule.  (@Freedman).  The histogram appears to follow an approximately normal distribution.  The Q-Q plot mostly follows this as most points follow the linear trend represented by the red line.
+
+```{r, , fig.pos="H"}
+#| label: fig-normality
+#| echo: false
+#| eval: true
+#| fig-cap: "Plots used to check if the distribution of the final calf weight is normal."
+#| layout-ncol: 2
+#| fig-subcap: 
+#|  - "Histogram of final calf weight."
+#|  - "Q-Q plot of final calf weight."
+#| fig-width: 6
+#| fig-height: 4
+
+bin_width <- round(2*IQR(data$Final.Calf.BW)/(length(data$Final.Calf.BW))^(1/3), 2)
+
+ggplot(data, aes(x = Final.Calf.BW)) +
+  geom_histogram(binwidth = bin_width, color = "black", fill = "skyblue") +
+  labs(
+    x = "Weight",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+ggplot(data, aes(sample = Final.Calf.BW)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+
+```
+
+Before moving on we want to look at plots of the scoring variables as well.  While we suspect a heavy skew for each, the histograms in @fig-scoring-dist verify this.  It is important to remember that these two variables are not continuous like the weight variable, so the types of models used will vary.
+
+```{r, , fig.pos="H"}
+#| label: fig-scoring-dist
+#| echo: false
+#| eval: true
+#| fig-cap: "Histograms of scoring variables."
+#| layout-ncol: 2
+#| fig-subcap: 
+#|  - "Histogram of calving ease."
+#|  - "Histogram of calf vigor."
+#| fig-width: 6
+#| fig-height: 4
+
+
+ggplot(data, aes(x = Calving.Ease)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
+  labs(
+    x = "Ease Score",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+ggplot(data, aes(x = Calf.Vigor)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
+  labs(
+    x = "Vigor Score",
+    y = "Frequency"
+  ) +
+  theme_minimal()
 
 ```
 
 
+
 ## Exploring the Data
 
+Before looking at potential models, let's explore how some of the variables interact with each other.  While we will be able to include other explanatory variables, the client specifically mentions using the third trimester treatment and the sex of a calf as explanatory variables of interest.  The table in @fig-table shows the breakdown of treatment by sex.  Note HFR stands for heifer and STR stands for steer.  Although not every group has an equivalent number of subjects, this is nothing we are concerned about.
+
 ```{r, , fig.pos="H"}
-#| label: normality
+#| label: fig-table
+#| echo: false
+#| eval: true
+#| fig-cap: "Table showing the breakdown of treatment by sex."
+
+## Toma data set
+#data2 <- read.csv("imput_data.csv")
+
+## Ryan data set
+data2 <- cleaned_data
+
+crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
+
+crosstab_df <- as.data.frame(crosstab_treatment_sex)
+
+kable(
+  crosstab_treatment_sex)
+
+```
+
+Now let's consider how these variables affect the final body weight. The boxplot shown in @fig-box-1 indicates the highest median weights come from the MET treatment, followed closely by DDG.  Additionally, the steers are heavier on average than the heifers.  This indicates both likely have a use in predicting the final weight of a calf.  The variance differs by both treatment and sex, but the only outlier is a heifer calf with the MET treatment.
+
+
+```{r, , fig.pos="H"}
+#| label: fig-box-1
+#| echo: false
+#| eval: true
+#| fig-cap: "Final body weight by treatment and sex."
+#| fig-width: 6
+#| fig-height: 4
+
+ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = SEX)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(x = "Treatment", y = "Final Body Weight") +
+  theme_minimal()
+
+```
+
+
+
+```{r, , fig.pos="H"}
+#| label: normality-lots
 #| echo: false
 #| eval: true
 #| layout-ncol: 4
 #| layout-nrow: 5
 
-# Select numerical variables
-numeric_vars <- cleaned_data %>% select_if(where(is.numeric))
-
-# Plot histograms for all numerical variables
-for (col in colnames(numeric_vars)) {
-  p <- ggplot(cleaned_data, aes_string(x = col)) +
-    geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
-    labs(title = paste("Distribution of", col), x = col, y = "Frequency") +
-    theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-  # Explicitly print the plot
-  print(p)
-}
+# # Select numerical variables
+# numeric_vars <- cleaned_data %>% select_if(where(is.numeric))
+# 
+# # Plot histograms for all numerical variables
+# for (col in colnames(numeric_vars)) {
+#   p <- ggplot(cleaned_data, aes_string(x = col)) +
+#     geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
+#     labs(title = paste("Distribution of", col), x = col, y = "Frequency") +
+#     theme_minimal() +
+#     theme(plot.title = element_text(hjust = 0.5))
+#   
+#   # Explicitly print the plot
+#   print(p)
+# }
 
 
 ```
@@ -240,91 +367,239 @@ for (col in colnames(numeric_vars)) {
 #| layout-ncol: 2
 #| layout-nrow: 2
 
-## Toma data set
-#data2 <- read.csv("imput_data.csv")
-
-## Ryan data set
-data2 <- cleaned_data
-
-# Cross-tabulation: Relationship between treatments and calf sex
-crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
-print(crosstab_treatment_sex)
-
-# Boxplot: Final Body Weight by Treatment and Sex
-ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = SEX)) +
-  geom_boxplot(outlier.color = "red", alpha = 0.7) +
-  labs(title = "Final Body Weight by Treatment and Sex", x = "Treatment", y = "Final Body Weight") +
-  theme_minimal()
-
-# Scatterplot: Calf Vigor vs. Final Body Weight
-ggplot(data2, aes(x = Calf.Vigor, y = Final.BW, color = SEX, shape = Calan.Treatment)) +
-  geom_point(size = 3, alpha = 0.7) +
-  labs(title = "Scatterplot of Calf Vigor vs. Final Body Weight", x = "Calf Vigor", y = "Final Body Weight") +
-  theme_minimal()
-
-# Scatterplot: Calving Ease vs. Final Body Weight
-ggplot(data2, aes(x = Calving.Ease, y = Final.BW, color = SEX, shape = Calan.Treatment)) +
-  geom_point(size = 3, alpha = 0.7) +
-  labs(title = "Scatterplot of Calving Ease vs. Final Body Weight", x = "Calving Ease", y = "Final Body Weight") +
-  theme_minimal()
+# ## Toma data set
+# #data2 <- read.csv("imput_data.csv")
+# 
+# ## Ryan data set
+# data2 <- cleaned_data
+# 
+# # Cross-tabulation: Relationship between treatments and calf sex
+# crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
+# print(crosstab_treatment_sex)
+# 
+# # Boxplot: Final Body Weight by Treatment and Sex
+# ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = SEX)) +
+#   geom_boxplot(outlier.color = "red", alpha = 0.7) +
+#   labs(title = "Final Body Weight by Treatment and Sex", x = "Treatment", y = "Final Body Weight") +
+#   theme_minimal()
+# 
+# # Scatterplot: Calf Vigor vs. Final Body Weight
+# ggplot(data2, aes(x = Calf.Vigor, y = Final.BW, color = SEX, shape = Calan.Treatment)) +
+#   geom_point(size = 3, alpha = 0.7) +
+#   labs(title = "Scatterplot of Calf Vigor vs. Final Body Weight", x = "Calf Vigor", y = "Final Body Weight") +
+#   theme_minimal()
+# 
+# # Scatterplot: Calving Ease vs. Final Body Weight
+# ggplot(data2, aes(x = Calving.Ease, y = Final.BW, color = SEX, shape = Calan.Treatment)) +
+#   geom_point(size = 3, alpha = 0.7) +
+#   labs(title = "Scatterplot of Calving Ease vs. Final Body Weight", x = "Calving Ease", y = "Final Body Weight") +
+#   theme_minimal()
 
 ```
 
-# Potential models
+# Models for Calving Ease
 
-## Model 1 - ANCOVA Model
+## Ordinal Logistic Regression Model
 
 ```{r, , fig.pos="H"}
-#| label: fig-ANCOVA-1
+#| label: fig-OLS-Ease
+#| echo: false
+#| eval: true
+
+data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
+
+ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
+
+summary(ease_model_3)
+
+# Extract p-values
+coefs <- coef(summary(ease_model_3))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+print(coefs)
+
+```
+
+## Multinomial Logistic Regression
+
+```{r, , fig.pos="H"}
+#| label: fig-MVR-Ease
+#| echo: false
+#| eval: true
+
+ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
+summary(ease_model_4)
+
+```
+**Pairwise Comparisons**
+```{r, , fig.pos="H"}
+#| label: fig-MVR-Ease-Comparisons
+#| echo: false
+#| eval: true
+
+emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
+pairs(emm_ease)
+
+```
+
+# Models for Calf Vigor
+
+## Ordinal Logistic Regression Model
+
+```{r, , fig.pos="H"}
+#| label: fig-OLS-Vigor
+#| echo: false
+#| eval: true
+
+data2$Calf.Vigor <- factor(data2$Calf.Vigor, ordered = TRUE)
+
+vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
+
+summary(vigor_model_1)
+
+# Extract p-values
+coefs <- coef(summary(vigor_model_1))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+print(coefs)
+
+```
+
+
+**Pairwise comparisons**
+```{r, , fig.pos="H"}
+#| label: fig-OLS-Vigor-Comp
+#| echo: false
+#| eval: true
+
+emm_vigor <- emmeans(vigor_model_1, ~ Calan.Treatment | SEX)
+pairs(emm_vigor)
+
+```
+
+## Multinomial Logistic Regression
+
+```{r, , fig.pos="H"}
+#| label: fig-MVR-Vigor
+#| echo: false
+#| eval: true
+
+vigor_model_2 <- multinom(Calf.Vigor ~ Calan.Treatment * SEX, data = data2)
+summary(vigor_model_2)
+
+```
+
+
+
+# Models for Final Calf Weight
+
+## Linear Model
+
+```{r, , fig.pos="H"}
+#| label: fig-LM
 #| echo: false
 #| eval: true
 #| layout-ncol: 2
 #| layout-nrow: 2
 
-# Fit ANCOVA model
-ancova_model <- lm(Final.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
+data2$Calan.Treatment <- as.factor(data2$Calan.Treatment)
 
-# Summarize the model
+weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
+summary(weight_model_5)
+
+```
+
+**Tukey comparison**
+```{r, , fig.pos="H"}
+#| label: fig-LM-Comparison
+#| echo: false
+#| eval: true
+
+tukey_weight <- glht(weight_model_5, linfct = mcp(Calan.Treatment = "Tukey"))
+
+summary(tukey_weight)
+
+```
+
+## Linear Mixed Model
+
+**This will need to be redone in SAS if we stick with it.**
+```{r, , fig.pos="H"}
+#| label: fig-LMM
+#| echo: false
+#| eval: true
+
+weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
+summary(weight_model_6)
+
+```
+
+**Tukey comparison**
+```{r, , fig.pos="H"}
+#| label: fig-LMM-Tukey-Comparison
+#| echo: false
+#| eval: true
+
+tukey_weight1 <- glht(weight_model_6, linfct = mcp(Calan.Treatment = "Tukey"))
+
+summary(tukey_weight1)
+
+```
+
+**Pariwise comparison**
+```{r, , fig.pos="H"}
+#| label: fig-LMM-Pairwise-Comparison
+#| echo: false
+#| eval: true
+
+emm_weight <- emmeans(weight_model_6, ~ Calan.Treatment | SEX)
+pairs(emm_weight)
+
+```
+
+## ANCOVA Model
+
+This includes initial weight.
+
+```{r, , fig.pos="H"}
+#| label: fig-ANCOVA
+#| echo: false
+#| eval: true
+
+ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
+
 summary(ancova_model)
 
-# Check assumptions
+```
+
+```{r, , fig.pos="H"}
+#| label: fig-ANCOVA-assumptions
+#| echo: false
+#| eval: true
+#| fig-cap: ""
+#| layout-ncol: 2
+#| latout-nrow: 2
+#| fig-subcap: 
+#|  - ""
+#|  - ""
+#|  - ""
+#|  - ""
+#| fig-width: 6
+#| fig-height: 4
+
+#par(mfrow = c(2, 2))
 plot(ancova_model)
 
 ```
 
 **Post Hoc Test**
 ```{r, , fig.pos="H"}
-#| label: fig-ANCOVA-2
+#| label: fig-ANCOVA-Post-HOC
 #| echo: false
 #| eval: true
 
-# Estimated marginal means and pairwise comparisons
 emm <- emmeans(ancova_model, ~ Calan.Treatment | SEX)
 pairs(emm)
-
-```
-
-## Model 2 - OLR Model
-
-```{r, , fig.pos="H"}
-#| label: fig-OLR-Model
-#| echo: false
-#| eval: true
-
-# Convert Calf.Vigor to an ordered factor
-data$Calf.Vigor <- factor(data$Calf.Vigor, ordered = TRUE)
-
-# Fit the ordinal logistic regression model
-vigor_model <- polr(Calf.Vigor ~ Calan.Treatment * SEX + Initial.BW, data = data, Hess = TRUE)
-
-# Summarize the model
-summary(vigor_model)
-
-# Extract p-values for the coefficients
-coefs <- coef(summary(vigor_model))
-p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
-coefs <- cbind(coefs, "p-value" = p_values)
-print(coefs)
 
 ```
 
@@ -357,6 +632,8 @@ $$
 where $y_{ijklm}$ represents the *dependent variable*, ...
 
 ```![Picture of SAS Output](filename.png){width="3in"}```
+
+
 
 # Conclusion
 
