@@ -264,10 +264,11 @@ write.csv(data, "imput_data.csv", row.names = FALSE)
 
 library(readr)
 imput_data <- read_csv("imput_data.csv")
+head(imput_data)
 
 ```
 ## Summary Statistic
-
+[Note: I did seperately and together both way. whichever you like add that only]
 ```{r}
 # Load necessary libraries
 library(dplyr)
@@ -302,6 +303,14 @@ ggplot(data2, aes(x = Final.BW)) +
   labs(title = "Histogram of Final Body Weight", x = "Final BW", y = "Frequency") +
   theme_minimal()
 
+# Histogram for Final Calf Body Weight
+ggplot(data2, aes(x = Final.Calf.BW)) +
+  geom_histogram(binwidth = 20, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Final Calf Body Weight", x = "Final Calf BW", y = "Frequency") +
+  theme_minimal()
+
+par(mfrow = c(2, 2)) 
+
 # Boxplot for Final Body Weight by Treatment
 ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = Calan.Treatment)) +
   geom_boxplot(outlier.color = "red", alpha = 0.7) +
@@ -316,12 +325,70 @@ ggplot(data2, aes(x = SEX, y = Final.BW, fill = SEX)) +
   theme_minimal() +
   scale_fill_brewer(palette = "Pastel1")
 
+# Boxplot for Final Calf Body Weight by Treatment
+ggplot(data2, aes(x = Calan.Treatment, y = Final.Calf.BW, fill = Calan.Treatment)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Body Weight by Treatment", x = "Treatment", y = "Final BW") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set3")
+
+# Boxplot for Final Calf Body Weight by Sex
+ggplot(data2, aes(x = SEX, y = Final.Calf.BW, fill = SEX)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Body Weight by Sex", x = "Sex", y = "Final BW") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Pastel1")
+
+```
+
+**Interpretation of Box plot for Calf Body Weight:**
+MET treatment consistently shows the highest median final body weight, followed by DDG, while CON has the lowest median and the narrowest range. STR (steers) exhibit higher median body weights and greater variability compared to HFR (heifers), which show narrower distributions. Outliers are more pronounced in MET and STR groups, reflecting individual variation among calves. These findings suggest MET is the most effective treatment for promoting growth, while CON may be limited in its ability to achieve higher body weights. Overall, both treatment and sex significantly influence calf body weight outcomes
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(gridExtra)
+
+# Boxplot for Final Body Weight by Treatment
+plot1 <- ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = Calan.Treatment)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Body Weight by Treatment", x = "Treatment", y = "Final BW") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set3")
+
+# Boxplot for Final Body Weight by Sex
+plot2 <- ggplot(data2, aes(x = SEX, y = Final.BW, fill = SEX)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Body Weight by Sex", x = "Sex", y = "Final BW") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Pastel1")
+
+# Boxplot for Final Calf Body Weight by Treatment
+plot3 <- ggplot(data2, aes(x = Calan.Treatment, y = Final.Calf.BW, fill = Calan.Treatment)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Calf Body Weight by Treatment", x = "Treatment", y = "Final BW") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set3")
+
+# Boxplot for Final Calf Body Weight by Sex
+plot4 <- ggplot(data2, aes(x = SEX, y = Final.Calf.BW, fill = SEX)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Calf Body Weight by Sex", x = "Sex", y = "Final BW") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Pastel1")
+
+# Arrange the plots in a grid
+grid.arrange(plot1, plot2, plot3, plot4, nrow = 2, ncol = 2)
+
 ```
 
 
-
 # Exploring the Data
+ **Relationship between treatments and calf sex**
+The cross-tabulation shows a relatively balanced distribution of calf sex across treatments. In the CON group, there are slightly more HFR (heifers) than STR (steers), with 19 and 15 calves, respectively. The DDG group has more STR (20) compared to HFR (14), while the MET group is more evenly distributed with 18 HFR and 15 STR. Overall, the distribution of sexes across treatments suggests no significant bias in the assignment of calves, supporting a fair experimental design. The slightly higher proportion of STR in DDG might warrant further exploration but does not indicate a major imbalance.
 
+MET treatment consistently produces the highest median final body weights for both sexes, with STR (steers) outperforming HFR (heifers) across all treatments. Higher vigor scores (2 and 3) are linked to greater body weights, particularly under the MET treatment, which shows the largest variability and outliers. Easier births (calving ease scores of 1) are associated with higher body weights, with MET-treated calves and STR consistently achieving the best outcomes. Across all analyses, the MET treatment emerges as the most favorable, with DDG showing intermediate performance and CON yielding the lowest body weights. These results highlight the significant influence of treatment, sex, calf vigor, and calving ease on final Calf body weight outcomes.
+
+[Note: I think we need to focus on calf body wight. Not the body weight of mother cow]
 ```{r, , fig.pos="H"}
 #| label: Scratch work
 #| echo: false
@@ -355,17 +422,158 @@ ggplot(data2, aes(x = Calving.Ease, y = Final.BW, color = SEX, shape = Calan.Tre
   labs(title = "Scatterplot of Calving Ease vs. Final Body Weight", x = "Calving Ease", y = "Final Body Weight") +
   theme_minimal()
 
+# Boxplot: Final Calf Body Weight by Treatment and Sex
+ggplot(data2, aes(x = Calan.Treatment, y = Final.Calf.BW, fill = SEX)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Final Calf Body Weight by Treatment and Sex", x = "Treatment", y = "Final Calf Body Weight") +
+  theme_minimal()
+
+# Scatterplot: Calf Vigor vs. Final Calf Body Weight
+ggplot(data2, aes(x = Calf.Vigor, y = Final.Calf.BW, color = SEX, shape = Calan.Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Scatterplot of Calf Vigor vs. Final Calf Body Weight", x = "Calf Vigor", y = "Final Calf Body Weight") +
+  theme_minimal()
+
+# Scatterplot: Calving Ease vs. Final Calf Body Weight
+ggplot(data2, aes(x = Calving.Ease, y = Final.Calf.BW, color = SEX, shape = Calan.Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Scatterplot of Calving Ease vs. Final Calf Body Weight", x = "Calving Ease", y = "Final Calf Body Weight") +
+  theme_minimal()
+
 ```
 
 ## Model
-1. ANCOVA Model
+**Ordinal Logistic Regression Model for Calf Vigor**
+```{r}
+library(MASS)
+
+# Ensure Calf.Vigor is an ordered factor
+data2$Calf.Vigor <- factor(data2$Calf.Vigor, ordered = TRUE)
+
+
+# Fit the ordinal logistic regression model
+vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
+
+# Summarize the model
+summary(vigor_model_1)
+
+# Extract p-values
+coefs <- coef(summary(vigor_model_1))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+print(coefs)
+
+```
+
+**Comparison**
+```{r}
+
+# Perform pairwise comparisons using estimated marginal means
+library(emmeans)
+emm_vigor <- emmeans(vigor_model_1, ~ Calan.Treatment | SEX)
+pairs(emm_vigor)
+
+```
+
+
+**Model 2: Multinomial Logistic Regression for Calf Vigor**
+```{r}
+library(nnet)
+vigor_model_2 <- multinom(Calf.Vigor ~ Calan.Treatment * SEX, data = data2)
+summary(vigor_model_2)
+
+```
+**Model 1: OLR for Calving Ease**
+```{r}
+# Ensure Calving.Ease is an ordered factor
+data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
+
+library(MASS)
+
+# Fit the ordinal logistic regression model
+ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
+
+# Summarize the model
+summary(ease_model_3)
+
+# Extract p-values
+coefs <- coef(summary(ease_model_3))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+print(coefs)
+
+```
+
+
+**Model 2: Multinomial Logistic Regression for Calf Calving Ease**
+
+```{r}
+library(nnet)
+ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
+summary(ease_model_4)
+
+# Fit multinomial logistic regression model
+library(nnet)
+# Perform pairwise comparisons using estimated marginal means
+emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
+pairs(emm_ease)
+
+```
+**Model 1: LM for Final Calf Weight**
+```{r}
+weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
+summary(weight_model_5)
+
+```
+
+**Comparison**
+```{r}
+
+# Ensure Calan.Treatment is a factor
+data2$Calan.Treatment <- as.factor(data2$Calan.Treatment)
+
+# Fit the linear model again (if not already fitted)
+weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
+
+# Perform Tukey HSD test
+library(multcomp)
+tukey_weight <- glht(weight_model_5, linfct = mcp(Calan.Treatment = "Tukey"))
+
+# Summarize the results
+summary(tukey_weight)
+
+
+
+```
+
+**Linear Mixed Model**
+```{r}
+library(lme4)
+weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
+summary(weight_model_6)
+
+# Perform Tukey HSD test
+library(multcomp)
+tukey_weight1 <- glht(weight_model_6, linfct = mcp(Calan.Treatment = "Tukey"))
+
+# Summarize the results
+summary(tukey_weight1)
+
+# Perform pairwise comparisons using emmeans
+library(emmeans)
+emm_weight <- emmeans(weight_model_6, ~ Calan.Treatment | SEX)
+pairs(emm_weight)
+```
+
+[This two I made first. I included initial Wight here. Let me know what you think of including it. As, it's significant might be helpful]
+1. ANCOVA Model for Final Calf Weight
 ```{r, , fig.pos="H"}
 #| label: Scratch work
 #| echo: false
 #| eval: false
 
 # Fit ANCOVA model
-ancova_model <- lm(Final.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
+ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
 
 # Summarize the model
 summary(ancova_model)
@@ -387,6 +595,8 @@ emm <- emmeans(ancova_model, ~ Calan.Treatment | SEX)
 pairs(emm)
 
 ```
+
+
 **2. OLR Model**
 ```{r}
 library(MASS)
