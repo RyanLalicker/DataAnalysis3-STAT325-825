@@ -38,7 +38,6 @@ library(MASS)
 library(multcomp)
 library(lme4)
 library(nnet)
-library(gridExtra)
 
 data <- read.csv("data.csv")
 # Placeholder of original data
@@ -75,7 +74,7 @@ For more information on the experiment, the data, or any other files used in thi
 
 ## Variables
 
-As mentioned above the experiment used three different dietary treatments.  These were DDG, CON, and MET.  For the first two trimesters the heifers were given one of seven developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.  This is recorded in the `Calan.Treatment` column of the data set.  
+As mentioned above the experiment used three different dietary treatments.  These were DDG, CON, and MET.  For the first two trimesters the heifers were given one of seven developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.  This is recorded in the `Calan.Treatment` column of the dataset.  
 
 The heifers were placed into one of four pens by weight, which can be seen in the column `Pen #`.  They were then artificially inseminated from an assigned sire, which we will assume was done randomly since the client says weight was not a factor.  The sire is represented by the column of the same name and has six unique entries.
 
@@ -88,10 +87,7 @@ The client's main focus is the effect the third trimester treatment and the sex 
 
 ## Missing Values
 
-**UPDATE THIS AFTER SEEING WHAT VARIABLES ARE NEEDED FOR THE MODEL**
-
-
-The data contains some missing values. In total 53 rows in the data set are missing at lease one variable. @fig-missing-data shows which columns have the most missing data.  As we can see the values for the variable `DMI`, which according to the USDA represents the dry matter intake for a cow, is missing for two-thirds of the entries. (@USDA). Given the number of missing values is this large, it is probably best to not use this variable in our models.  Some other variables, including the final body weight of the calf represented by `Final.Calf.BW`, are missing in 19 entries.  Of the other four variables the client was most interested in, none have more than ten missing values.    
+The data contains some missing values. In total 53 rows in the dataset are missing at lease one variable. @fig-missing-data shows which columns have the most missing data.  As we can see the values for the variable `DMI`, which according to the USDA represents the dry matter intake for a cow, is missing for two-thirds of the entries. (@USDA). Given the number of missing values is this large, it is probably best to not use this variable in our models.  Some other variables, including the final body weight of the calf represented by `Final.Calf.BW`, are missing in 19 entries.  Of the other four variables the client was most interested in, none have more than ten missing values.    
 
 ```{r, , fig.pos="H"}
 #| label: fig-missing-data
@@ -106,82 +102,23 @@ gg_miss_var(data) +
 ```
 
 
-
-
-```{r, , fig.pos="H"}
-#| label: fig-heatmap
-#| fig-cap: "Heatmap of missing data."
-#| echo: false
-#| eval: true
-
-# # Assuming your dataset is named `data`
-# # Create a binary matrix indicating missing values
-# missing_matrix <- is.na(data)
-# 
-# # Convert the missing matrix to a long format for visualization
-# missing_data_long <- melt(missing_matrix)
-# colnames(missing_data_long) <- c("Row", "Column", "Missing")
-# 
-# # Create the heatmap
-# ggplot(missing_data_long, aes(x = Column, y = Row, fill = Missing)) +
-#   geom_tile(color = "white") +
-#   scale_fill_manual(values = c("FALSE" = "grey", "TRUE" = "red"), 
-#                     name = "Missing") +
-#   theme_minimal() +
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1),
-#         axis.title.x = element_blank(),
-#         axis.title.y = element_blank()) +
-#   ggtitle("Missing Data Heatmap")
-
-
-```
-
-
 ## Cleaning the Dataset
 
 ```{r,,fig.pos="H"}
-#| label: quant-imputing
+#| label: cleaning
 #| echo: false
 #| eval: true
 
-#colnames(data)
-
-quant <- c("Pen..", "Initial.BW", 
-           "Final.BW", "DMI", "ADG",
-           "Gest.Length", "X1st.Calf.BW", 
-           "Calving.Ease", "Calf.Vigor", "Final.Calf.BW", 
-           "HCW", "REA", "YG", "BF")
-
-for (var in quant) {
-  data[[var]] <- as.numeric(data[[var]])
-  data[[var]][is.na(data[[var]])] <- median(data[[var]], na.rm = TRUE)
-}
-
-for (var in names(df)) {
-  if (!(var %in% quant_vars)) {
-    df[[var]] <- as.character(df[[var]])
-  }
-}
+var_used <- c("Calan.Treatment", "SEX", "Calving.Ease", "Calf.Vigor", "Final.Calf.BW", "Pen..", "Initial.BW", "Sire")
+cleaned_data <- data[complete.cases(data[, var_used]), ]
 
 ```
 
-To clean up the data set let's first focus on some of the quantitative variables.  For these we can impute the missing values with the median or mean.  We will use the median due to the its greater resistance to potential outliers.  This reduces the number of rows with at least one missing variable to 15.  Much of the improvement comes from `DMI` being a quantitative variable, but to reiterate what was discussed earlier, this variable will not be used in any models.
+Due to the missing values discussed above, we need to clean this dataset before continuing.  There are generally two ways to handle missing values.  The first is imputing them with some metric like the mean, median, or mode of the variable.  The second is to just remove any rows with missing data.
 
-The categorical variables are not as simple.  Let's consider the third trimester treatment.  The MET treatment was used in 40 cases, while the other two treatments were only used 38 times, meaning there are four missing values.  If we used the mode as @MEMON2023101382 suggests, this would make 42 instances of the MET treatment.  However, it seems very possible that the missing entries were split between the CON and DDG treatments to make an even 40 uses each.  For this reason, rows with missing values for the categorical variables used in the model will be removed.  This results in the models using 113 entries of the original 120, which is something we are comfortable with.
+We decided to cut all rows that contained missing values for variables we are interested in.  These variables include the five variables the client is interested in, but also the pen number, sire, and the initial weight of the mother.  The latter two are `Sire` and `Initial.BW` in the dataset.  After removing missing values for these entries the dataset has 101 rows, which we feel is an ample amount for analyzing the data.  Note all future figures and models come from this cleaned dataset and not the original.
 
-**RETURN AND VARIFY NUMBERS BEFORE SUBMITTING.**
-
-```{r,,fig.pos="H"}
-#| label: cat-cutting
-#| echo: false
-#| eval: true
-
-#colnames(data)
-cat_used <- c("Calan.Treatment", "SEX")
-cleaned_data <- data[complete.cases(data[, cat_used]), ]
-
-```
-
+We initially considered imputing the quantitative variables with the respective median values and using the mode for categorical variables as @MEMON2023101382 suggests.  This has some issues though.  For an example let's consider the third trimester treatment.  The MET treatment was used in 40 cases, while the other two treatments were only used 38 times, meaning there are four missing values.  If we mode impute this variable there will be 42 instances of the MET treatment.  However, it seems very possible that the missing entries were split between the CON and DDG treatments to make an even 40 uses each.  While imputing quantitative variables is less risky, we are not fully comfortable with that approach either since we are trying to analyze the data.
 
 
 ## Summary Statistics
@@ -197,6 +134,10 @@ Let's take a closer look at what the three dependent variables the client is int
 dep_vars <- c("Calving.Ease", "Calf.Vigor", "Final.Calf.BW")
 
 custom_names <- c("Calving Ease", "Calf Vigor", "Final Calf Weight")
+
+cleaned_data$Calving.Ease <- as.numeric(cleaned_data$Calving.Ease)
+cleaned_data$Calf.Vigor <- as.numeric(cleaned_data$Calf.Vigor)
+cleaned_data$Final.Calf.BW <- as.numeric(cleaned_data$Final.Calf.BW)
 
 calc_stats <- function(var) {
   mean_val <- mean(var, na.rm = TRUE)
@@ -217,7 +158,9 @@ kable(summary_table, col.names = c("Variable", "Mean", "Median", "SD", "25th Per
 
 ```
 
-The final weight of calf is the third variable in @fig-summary-stats.  The mean and median are relatively similar given the large standard deviation.  While the previous two variables discussed had some concerns on top of being counting variables on a scale, the final weight does not present the same issues.  Further investigation into the approximate distribution of the final weight is needed though.
+The final weight of calf is the third variable in @fig-summary-stats.  The mean and median are relatively similar given the large standard deviation.  Going forward we can treat these variables as ordinal, which is just a cateogrical variable with an order.
+
+While the previous two variables discussed had some concerns on top of being counting variables on a scale, the final weight does not present the same issues.  Further investigation into the approximate distribution of the final weight is needed though.
 
 Let's look at a histogram and a Q-Q plot for the final weight of the calves in @fig-normality.  The bin width for the histogram comes from the Freedman-Diaconis rule.  (@Freedman).  The histogram appears to follow an approximately normal distribution.  The Q-Q plot mostly follows this as most points follow the linear trend represented by the red line.
 
@@ -233,9 +176,9 @@ Let's look at a histogram and a Q-Q plot for the final weight of the calves in @
 #| fig-width: 6
 #| fig-height: 4
 
-bin_width <- round(2*IQR(data$Final.Calf.BW)/(length(data$Final.Calf.BW))^(1/3), 2)
+bin_width <- round(2*IQR(cleaned_data$Final.Calf.BW)/(length(cleaned_data$Final.Calf.BW))^(1/3), 2)
 
-ggplot(data, aes(x = Final.Calf.BW)) +
+ggplot(cleaned_data, aes(x = Final.Calf.BW)) +
   geom_histogram(binwidth = bin_width, color = "black", fill = "skyblue") +
   labs(
     x = "Weight",
@@ -243,7 +186,7 @@ ggplot(data, aes(x = Final.Calf.BW)) +
   ) +
   theme_minimal()
 
-ggplot(data, aes(sample = Final.Calf.BW)) +
+ggplot(cleaned_data, aes(sample = Final.Calf.BW)) +
   stat_qq() +
   stat_qq_line(color = "red") +
   labs(
@@ -270,7 +213,7 @@ Before moving on we want to look at plots of the scoring variables as well.  Whi
 #| fig-height: 4
 
 
-ggplot(data, aes(x = Calving.Ease)) +
+ggplot(cleaned_data, aes(x = Calving.Ease)) +
   geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
   labs(
     x = "Ease Score",
@@ -278,7 +221,7 @@ ggplot(data, aes(x = Calving.Ease)) +
   ) +
   theme_minimal()
 
-ggplot(data, aes(x = Calf.Vigor)) +
+ggplot(cleaned_data, aes(x = Calf.Vigor)) +
   geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
   labs(
     x = "Vigor Score",
@@ -300,10 +243,7 @@ Before looking at potential models, let's explore how some of the variables inte
 #| eval: true
 #| fig-cap: "Table showing the breakdown of treatment by sex."
 
-## Toma data set
-#data2 <- read.csv("imput_data.csv")
 
-## Ryan data set
 data2 <- cleaned_data
 
 crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
@@ -339,7 +279,7 @@ kable(chi_sq_table, align = c("l", "c"), row.names = FALSE)
 
 ```
 
-Now let's consider how these variables affect the final body weight. The boxplot shown in @fig-box-1 indicates the highest median weights come from the MET treatment, followed closely by DDG.  Additionally, the steers are heavier on average than the heifers.  This indicates both likely have a use in predicting the final weight of a calf.  The variance differs by both treatment and sex, but the only outlier is a heifer calf with the MET treatment.
+Now let's consider how these variables affect the final body weight. The boxplot shown in @fig-box-1 allows us to see this relationship graphically.  We can see the steers are heavier on average than the heifers.  The treatments seem to different variances as well, but their median values are not different by huge quantities.  Both the CON and MET treatments had one steer large enough to be an outlier, while the DDG treatment had several outliers for both sexes.
 
 
 ```{r, , fig.pos="H"}
@@ -350,76 +290,41 @@ Now let's consider how these variables affect the final body weight. The boxplot
 #| fig-width: 6
 #| fig-height: 4
 
-ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = SEX)) +
+ggplot(data2, aes(x = Calan.Treatment, y = Final.Calf.BW, fill = SEX)) +
   geom_boxplot(outlier.color = "red", alpha = 0.7) +
   labs(x = "Treatment", y = "Final Body Weight") +
   theme_minimal()
 
 ```
 
-
+Another variable we want to investigate graphically is the initial weight of the heifer that birthed the calf.  Let's see how it compares to both the ease and vigor score.  In @fig-bodyweight-scatter we can see this while also accounting for both the third trimester treatment with the shape of the data point and the sex of the calf with the color of the data point.  This allows us to see both how the effect the heifer's initial weight has, but also the trends of both treatment and sex.
 
 ```{r, , fig.pos="H"}
-#| label: normality-lots
+#| label: fig-bodyweight-scatter
 #| echo: false
 #| eval: true
-#| layout-ncol: 4
-#| layout-nrow: 5
-
-# # Select numerical variables
-# numeric_vars <- cleaned_data %>% select_if(where(is.numeric))
-# 
-# # Plot histograms for all numerical variables
-# for (col in colnames(numeric_vars)) {
-#   p <- ggplot(cleaned_data, aes_string(x = col)) +
-#     geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
-#     labs(title = paste("Distribution of", col), x = col, y = "Frequency") +
-#     theme_minimal() +
-#     theme(plot.title = element_text(hjust = 0.5))
-#   
-#   # Explicitly print the plot
-#   print(p)
-# }
-
-
-```
-
-```{r, , fig.pos="H"}
-#| label: fig-exploratory-plots
-#| echo: false
-#| eval: TRUE
+#| fig-cap: "Scatterplot of heifer's initial body weight versus scoring variables, controlling for third trimester treatment and sex of the calf."
+#| fig-width: 6
+#| fig-height: 4
 #| layout-ncol: 2
-#| layout-nrow: 2
+#| fig-subcap: 
+#|  - "Initial body weight vs. calf vigor."
+#|  - "Initial body weight vs. calving ease."
 
-# ## Toma data set
-# #data2 <- read.csv("imput_data.csv")
-# 
-# ## Ryan data set
-# data2 <- cleaned_data
-# 
-# # Cross-tabulation: Relationship between treatments and calf sex
-# crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
-# print(crosstab_treatment_sex)
-# 
-# # Boxplot: Final Body Weight by Treatment and Sex
-# ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = SEX)) +
-#   geom_boxplot(outlier.color = "red", alpha = 0.7) +
-#   labs(title = "Final Body Weight by Treatment and Sex", x = "Treatment", y = "Final Body Weight") +
-#   theme_minimal()
-# 
-# # Scatterplot: Calf Vigor vs. Final Body Weight
-# ggplot(data2, aes(x = Calf.Vigor, y = Final.BW, color = SEX, shape = Calan.Treatment)) +
-#   geom_point(size = 3, alpha = 0.7) +
-#   labs(title = "Scatterplot of Calf Vigor vs. Final Body Weight", x = "Calf Vigor", y = "Final Body Weight") +
-#   theme_minimal()
-# 
-# # Scatterplot: Calving Ease vs. Final Body Weight
-# ggplot(data2, aes(x = Calving.Ease, y = Final.BW, color = SEX, shape = Calan.Treatment)) +
-#   geom_point(size = 3, alpha = 0.7) +
-#   labs(title = "Scatterplot of Calving Ease vs. Final Body Weight", x = "Calving Ease", y = "Final Body Weight") +
-#   theme_minimal()
+data2$Initial.BW <- as.numeric(data2$Initial.BW)
+
+ggplot(data2, aes(x = Calf.Vigor, y = Initial.BW, color = SEX, shape = Calan.Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(x = "Calf Vigor", y = "Initial Body Weight of Heifer") +
+  theme_minimal()
+
+ggplot(data2, aes(x = Calving.Ease, y = Initial.BW, color = SEX, shape = Calan.Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(x = "Calving Ease", y = "Initial Body Weight of Heifer") +
+  theme_minimal()
 
 ```
+**Summarize and consider more plots**
 
 # Models for Calving Ease
 
@@ -452,7 +357,7 @@ print(coefs)
 
 ```
 
-## Multinomial Logistic Regression
+## CUT THIS - Multinomial Logistic Regression
 
 ```{r, , fig.pos="H"}
 #| label: fig-MVR-Ease
@@ -509,7 +414,7 @@ pairs(emm_vigor)
 
 ```
 
-## Multinomial Logistic Regression
+## CUT THIS - Multinomial Logistic Regression
 
 ```{r, , fig.pos="H"}
 #| label: fig-MVR-Vigor
@@ -635,7 +540,7 @@ pairs(emm)
 
 ```
 
-## Model 3 - Binary Logistic Regression with GLM
+## Binary Logistic Regression with GLM
 
 ```{r, , fig.pos="H"}
 #| label: fig-Binary-log-reg-GLM
