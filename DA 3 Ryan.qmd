@@ -292,7 +292,7 @@ ggplot(data, aes(x = Calf.Vigor)) +
 
 ## Exploring the Data
 
-Before looking at potential models, let's explore how some of the variables interact with each other.  While we will be able to include other explanatory variables, the client specifically mentions using the third trimester treatment and the sex of a calf as explanatory variables of interest.  The table in @fig-table shows the breakdown of treatment by sex.  Note HFR stands for heifer and STR stands for steer.  Although not every group has an equivalent number of subjects, this is nothing we are concerned about.
+Before looking at potential models, let's explore how some of the variables interact with each other.  While we will be able to include other explanatory variables, the client specifically mentions using the third trimester treatment and the sex of a calf as explanatory variables of interest.  The table in @fig-table shows the breakdown of treatment by sex.  Note HFR stands for heifer and STR stands for steer.  Although not every group has an equivalent number of subjects, this is nothing we are concerned about.  Please note that the total occurrences per treatment are different than discussed above since rows containing missing values were removed.
 
 ```{r, , fig.pos="H"}
 #| label: fig-table
@@ -308,10 +308,34 @@ data2 <- cleaned_data
 
 crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
 
-crosstab_df <- as.data.frame(crosstab_treatment_sex)
-
 kable(
   crosstab_treatment_sex)
+
+
+```
+
+
+
+One of the key assumptions for some of the models we will be discussing later is that the explanatory variables of the model are not highly correlated with each other.  If this assumption is violated, multicollinearity is present.  Since both the treatment and the sex of the calf are categorical, we can use the Pearson's chi-squared on the table in @fig-table to determine if multicollinearity is a problem for these variables.  (@ChiSquared).  The results of the test, shown in @fig-chi, indicate multicollinearity is not a problem since the p-value is well above any commonly used significance level such as 0.05.
+
+
+```{r, , fig.pos="H"}
+#| label: fig-chi
+#| echo: false
+#| eval: true
+#| fig-cap: "Chi-squared test for treatment and sex."
+
+
+chi_sq_test <- chisq.test(crosstab_treatment_sex)
+chi_sq_table <- data.frame(
+  Metric = c("Statistic", "Degrees of Freedom", "P-Value"),
+  Value = c(round(chi_sq_test$statistic, 2), 
+            chi_sq_test$parameter, 
+            format.pval(chi_sq_test$p.value)),
+  stringsAsFactors = FALSE
+)
+
+kable(chi_sq_table, align = c("l", "c"), row.names = FALSE)
 
 ```
 
@@ -399,7 +423,15 @@ ggplot(data2, aes(x = Calan.Treatment, y = Final.BW, fill = SEX)) +
 
 # Models for Calving Ease
 
+Since the client is interested in three different dependent variables we will need to handle one variable at a time.  For the next two models we will be focused on calving ease.
+
 ## Ordinal Logistic Regression Model
+
+Since calving ease is a score from one to three it can be considered an ordinal variable.  This means instead of treating it as a quantitative variable as we did previously, it could be considered an ordered categorical variable.  One method of modeling ordinal variables is with ordinal logistic regression, or OLS.  This uses one or more independent variables to predict the ordinal value of the dependent variable.  A key assumption of OLS, outside of the dependent variable being ordinal, is no multicollinearity between independent variables.  (@StAndrews).
+
+Let's attempt to apply an OLS to the calving ease variable.  In this simple case we will use the third trimester treatment and the calf's sex as the independent variables. As we saw in @fig-chi, multicollinearity is not a problem with these variables, so we may procede.
+
+**START BACK HERE**
 
 ```{r, , fig.pos="H"}
 #| label: fig-OLS-Ease
