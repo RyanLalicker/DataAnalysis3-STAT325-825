@@ -12,7 +12,6 @@ execute:
 columns: 2
 format:
   pdf: 
-    extensions-dir: quarto-wordcount/_extensions/wordcount
     fig-align: center
     fig-width: 6
     fig-height: 4
@@ -160,6 +159,9 @@ data <- data[complete.cases(data[, neededvars]), ]
 
 ```
 
+
+
+
 ## Misiing Value
 
 Columns with Missing Values:
@@ -259,14 +261,34 @@ sum(is.na(data)) # Total missing values remaining
 View(data)
 ```
 ```{r}
-# Save the modified dataset as a CSV file
-write.csv(data, "imput_data.csv", row.names = FALSE)
 
 library(readr)
 imput_data <- read_csv("imput_data.csv")
 head(imput_data)
 
+imput_data <- read_csv("imput_data.csv", 
+    col_types = cols(Calving.Ease = col_character()))
+
+imput_data <- read_csv("imput_data.csv", 
+    col_types = cols(Calf.Vigor = col_character()))
+head(imput_data)
+
+# Save the modified dataset as a CSV file
+write.csv(data, "imput_data.csv", row.names = FALSE)
+# Save the modified dataset as a CSV file
+write.csv(data, "imput_data1.csv", row.names = FALSE)
+
 ```
+
+```{r}
+library(readr)
+removed_missing_data <- read_csv("removed_missing_data.csv", 
+    col_types = cols(Calving.Ease = col_character(), 
+        Calf.Vigor = col_character()))
+head(removed_missing_data)
+write.csv(data, "rm_data.csv", row.names = FALSE)
+```
+
 ## Summary Statistic
 [Note: I did seperately and together both way. whichever you like add that only]
 ```{r}
@@ -274,8 +296,8 @@ head(imput_data)
 library(dplyr)
 library(ggplot2)
 
-# Load the dataset (replace 'imput_data.csv' with the correct path if needed)
-data2 <- read.csv("imput_data.csv")
+
+data2 <- read.csv("removed_missing_data.csv")
 
 # Step 2: Descriptive Analysis
 
@@ -344,6 +366,9 @@ ggplot(data2, aes(x = SEX, y = Final.Calf.BW, fill = SEX)) +
 **Interpretation of Box plot for Calf Body Weight:**
 MET treatment consistently shows the highest median final body weight, followed by DDG, while CON has the lowest median and the narrowest range. STR (steers) exhibit higher median body weights and greater variability compared to HFR (heifers), which show narrower distributions. Outliers are more pronounced in MET and STR groups, reflecting individual variation among calves. These findings suggest MET is the most effective treatment for promoting growth, while CON may be limited in its ability to achieve higher body weights. Overall, both treatment and sex significantly influence calf body weight outcomes
 ```{r}
+
+data2 <- read.csv("removed_missing_data.csv")
+
 # Load necessary libraries
 library(ggplot2)
 library(gridExtra)
@@ -397,8 +422,8 @@ MET treatment consistently produces the highest median final body weights for bo
 library(dplyr)
 library(ggplot2)
 
-# Load the dataset (replace 'imput_data.csv' with the correct path if needed)
-data2 <- read.csv("imput_data.csv")
+
+data2 <- read.csv("removed_missing_data.csv")
 
 # Cross-tabulation: Relationship between treatments and calf sex
 crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
@@ -442,8 +467,20 @@ ggplot(data2, aes(x = Calving.Ease, y = Final.Calf.BW, color = SEX, shape = Cala
 
 ```
 
-## Model
+## Model [Note: Start adding from here]
+data2 <- read.csv("removed_missing_data.csv")[I used data2 as before by assigning the new csv file]
+
+
+## Ordinal Logistic Regression Model
 **Ordinal Logistic Regression Model for Calf Vigor**
+
+Since calving ease is a score from one to three it can be considered an ordinal variable.  This means instead of treating it as a quantitative variable as we did previously, it could be considered an ordered categorical variable.  One method of modeling ordinal variables is with ordinal logistic regression, or OLS.  This uses one or more independent variables to predict the ordinal value of the dependent variable.  A key assumption of OLS, outside of the dependent variable being ordinal, is no multicollinearity between independent variables.  (@StAndrews).
+
+Let's attempt to apply an OLS to the calving ease variable.  In this simple case we will use the third trimester treatment and the calf's sex as the independent variables. As we saw in @fig-chi, multicollinearity is not a problem with these variables, so we may procede.
+
+**Interpretation**
+The ordinal logistic regression model for Calf.Vigor shows no statistically significant main effects for Calan.Treatment (DDG, MET) or SEX (STR vs. HFR), nor their interactions (p>0.05). The thresholds between vigor levels are significant (p=0.017 for 1∣2,p=0.001 for 2∣3), indicating that the ordinal levels are distinct, validating the use of this model. The model's residual deviance is 113.059 with an AIC of 127.059, suggesting reasonable fit but limited explanatory power for the predictors. Overall, the findings indicate that neither treatment nor sex strongly influences vigor scores, though the response levels remain ordinally structured. Further exploration of additional covariates may be needed to explain variability in Calf.Vigor
+
 ```{r}
 library(MASS)
 
@@ -463,9 +500,26 @@ p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed
 coefs <- cbind(coefs, "p-value" = p_values)
 print(coefs)
 
+
 ```
 
+**Improvement of the model**
+This model is not improving also
+```{r}
+vigor_model_improved <- polr(Calf.Vigor ~ Calan.Treatment * SEX + Pen.. + Sire + Initial.BW, data = data2, Hess = TRUE)
+vigor_model_improved
+
+# Extract p-values
+coefs <- coef(summary(vigor_model_improved))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+print(coefs)
+```
+
+
 **Comparison**
+Since they're not significant. No need to compare.
+From the VIF score, there's multicollenearity for Sex variable
 ```{r}
 
 # Perform pairwise comparisons using estimated marginal means
@@ -475,15 +529,85 @@ pairs(emm_vigor)
 
 ```
 
-
 **Model 2: Multinomial Logistic Regression for Calf Vigor**
+The multinomial logistic regression model for Calf.Vigor with three levels (1,2,3) considers predictors Calan.Treatment (Con,DDG, MET), SEX (STR, HFR), and their interactions. None of the predictors or interaction terms are statistically significant, as all coefficients have large standard errors, indicating instability due to data sparsity. The residual deviance (104.3791) and AIC (128.3791) suggest a moderate fit, but high uncertainty in some estimates (e.g., for MET and SEXSTR) limits interpretability. The sparse combinations of response levels with predictors likely caused the inflated standard errors and poor precision. Addressing sparsity (e.g., collapsing categories or balancing the dataset) and simplifying the model (e.g., removing interactions) are essential next steps for improving the analysis
 ```{r}
 library(nnet)
 vigor_model_2 <- multinom(Calf.Vigor ~ Calan.Treatment * SEX, data = data2)
 summary(vigor_model_2)
 
 ```
+
+Even without interaction this model is not fitting good
+```{r}
+library(nnet)
+vigor_model_3 <- multinom(Calf.Vigor ~ Calan.Treatment + SEX, data = data2)
+summary(vigor_model_3)
+```
+
+```{r}
+
+AIC(vigor_model_1, vigor_model_2)
+
+```
+
+# Checking Assumption
+
+From the VIF score, there's multicollenearity for Sex variable
+
+For Multinomial- The assumption of linearity in the log-odds for Final Calf Body Weight is not satisfied.
+This non-linearity suggests the need for transformations or more flexible modeling techniques.
+
+The Ordinal Logistic Regression (OLR) model shows a smoother relationship between Final Body Weight and log-odds of Calf.Vigor = 2, with stable predictions even in sparse regions. In contrast, the Multinomial Logistic Regression (MLR) model demonstrates greater variability, with sharp fluctuations influenced by sparse data at the extremes, capturing more detailed patterns. OLR handles data sparsity better and assumes proportional odds, making it simpler and more interpretable. MLR provides flexibility for datasets with complex structures but risks overfitting in regions with fewer observations. Overall, OLR is preferred for stability and interpretability, while MLR is more appropriate if the proportional odds assumption is violated or additional complexity is necessary.
+```{r}
+library(car)
+vif(vigor_model_1)
+vif(vigor_model_2)
+
+# Create a new dataset with predicted probabilities
+data2$predicted_probs <- predict(vigor_model_1, type = "probs")
+
+# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
+library(ggplot2)
+ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = OLR",
+       x = "Final Calf Body Weight",
+       y = "Predicted Probability")
+
+# Create a new dataset with predicted probabilities
+data2$predicted_probs <- predict(vigor_model_2, type = "probs")
+
+# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
+library(ggplot2)
+ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = MLR",
+       x = "Final Calf Body Weight",
+       y = "Predicted Probability")
+
+
+```
+
+```{r}
+
+# Examine the distribution of Calf.Vigor across predictors
+table(data2$Calf.Vigor, data2$Calan.Treatment, data2$SEX)
+
+
+```
+
+```{r}
+
+```
+
+
 **Model 1: OLR for Calving Ease**
+
+The ordinal logistic regression model for Calving.Ease reveals that the treatment DDG has a strong and significant negative effect compared to the reference treatment CON (p<0.001), indicating lower odds of higher ease scores. In contrast, MET shows no significant effect compared to CON (p=0.354). The interaction between DDG and SEXSTR (Steer) is strongly significant (p<0.001), suggesting that the impact of DDG depends on calf sex, while the interaction between MET and SEXSTR is not significant (p=0.149). The significant thresholds confirm that the ordinal levels of Calving.Ease are distinct. Overall, the model highlights significant effects for DDG and its interaction with calf sex, while other predictors do not show substantial influence.
+
 ```{r}
 # Ensure Calving.Ease is an ordered factor
 data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
@@ -506,7 +630,7 @@ print(coefs)
 
 
 **Model 2: Multinomial Logistic Regression for Calf Calving Ease**
-
+The multinomial logistic regression model for Calving.Ease successfully converged, with a residual deviance of 58.42 and an AIC of 82.42, indicating moderate model fit. Extreme coefficients (e.g., −89.53 for Calan.TreatmentDDG) and large standard errors, especially for level 3, suggest data sparsity and instability in the estimates. Warnings for negative variance estimates point to multicollinearity or insufficient data for reliable interaction and treatment effect estimation. Post-hoc Tukey comparisons showed no significant differences between treatments (p=1.000), and missing standard errors (NaN) highlight issues with data variability. Overall, the model’s results are unreliable due to data limitations, necessitating simplified modeling or alternative approaches.
 ```{r}
 library(nnet)
 ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
@@ -519,6 +643,98 @@ emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
 pairs(emm_ease)
 
 ```
+# Checking Assumption
+From VIF, Holding the assumptions for both model 
+```{r}
+library(car)
+vif(ease_model_3)
+vif(ease_model_4)
+
+# Create a new dataset with predicted probabilities
+data2$predicted_probs <- predict(ease_model_3, type = "probs")
+
+
+library(ggplot2)
+ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = OLR",
+       x = "Final Calf Body Weight",
+       y = "Predicted Probability")
+
+# Create a new dataset with predicted probabilities
+data2$predicted_probs <- predict(ease_model_4, type = "probs")
+
+# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
+library(ggplot2)
+ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = MLR",
+       x = "Final Calf Body Weight",
+       y = "Predicted Probability")
+
+```
+
+
+
+
+## Mixed Model
+
+SAS output
+
+![Fig-1](mix.1.png)
+![Fig-2](mix.ls.png)
+
+![Fig-1](mix.res.png)
+
+**Linear Mixed Model for Final Calf Body Weight**
+The linear mixed model shows that Final Calf Body Weight is significantly higher for Steers (STR) compared to Heifers (HFR) (p<0.05), but there are no significant differences between treatments (CON, DDG, MET) or their interactions with sex. The random effect for Sire contributes variance (237423742374), while Pen has negligible variance (000), indicating it does not affect body weight. Tukey HSD and pairwise comparisons confirm no significant differences between treatments within or across sexes (p>0.05p > 0.05p>0.05). The high residual variance (124841248412484) suggests unaccounted variability, indicating that additional predictors might improve the model. Overall, treatment effects are not significant, but sex remains an important factor influencing final body weight.
+```{r}
+library(lme4)
+weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
+summary(weight_model_6)
+
+# Perform Tukey HSD test
+library(multcomp)
+tukey_weight1 <- glht(weight_model_6, linfct = mcp(Calan.Treatment = "Tukey"))
+
+# Summarize the results
+summary(tukey_weight1)
+
+# Perform pairwise comparisons using emmeans
+library(emmeans)
+emm_weight <- emmeans(weight_model_6, ~ Calan.Treatment | SEX)
+pairs(emm_weight)
+```
+
+**[Note]**
+[Haven't made the updated ANCOVA]
+5 model done. Probably multinomail need to remove but need to find out better model. Let's take decision after talking with her. 
+1. ANCOVA Model for Final Calf Weight
+```{r, , fig.pos="H"}
+#| label: Scratch work
+#| echo: false
+#| eval: false
+
+# Fit ANCOVA model
+ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Final.BW, data = data2)
+
+# Summarize the model
+summary(ancova_model)
+
+# Check assumptions
+par(mfrow = c(2, 2)) # Arrange diagnostic plots
+plot(ancova_model)
+
+
+
+```
+
+
+
+# If needed (for using later)
+
 **Model 1: LM for Final Calf Weight**
 ```{r}
 weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
@@ -541,46 +757,6 @@ tukey_weight <- glht(weight_model_5, linfct = mcp(Calan.Treatment = "Tukey"))
 
 # Summarize the results
 summary(tukey_weight)
-
-
-
-```
-
-**Linear Mixed Model**
-```{r}
-library(lme4)
-weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
-summary(weight_model_6)
-
-# Perform Tukey HSD test
-library(multcomp)
-tukey_weight1 <- glht(weight_model_6, linfct = mcp(Calan.Treatment = "Tukey"))
-
-# Summarize the results
-summary(tukey_weight1)
-
-# Perform pairwise comparisons using emmeans
-library(emmeans)
-emm_weight <- emmeans(weight_model_6, ~ Calan.Treatment | SEX)
-pairs(emm_weight)
-```
-
-[This two I made first. I included initial Wight here. Let me know what you think of including it. As, it's significant might be helpful]
-1. ANCOVA Model for Final Calf Weight
-```{r, , fig.pos="H"}
-#| label: Scratch work
-#| echo: false
-#| eval: false
-
-# Fit ANCOVA model
-ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
-
-# Summarize the model
-summary(ancova_model)
-
-# Check assumptions
-par(mfrow = c(2, 2)) # Arrange diagnostic plots
-plot(ancova_model)
 
 
 
