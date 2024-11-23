@@ -23,58 +23,56 @@ editor:
 
 # Introduction
 
-In this paper we will be looking at data related to calves.  The data comes from an experiment designed to study the impact dietary treatments given to pregnant heifers had on the development of the calves.  The study was conducted over a three year period and involved three different dietary treatments given to select groups of heifers in the final trimester.  In total the data has 22 variables for 120 entires, though some data points are missing.
+In this paper we will be looking at data related to calves.
+The data comes from an experiment designed to study the impact dietary treatments given to pregnant heifers had on the development of the calves.
+The study was conducted over a three year period and involved three different dietary treatments given to select groups of heifers in the final trimester.
+In total the data has 22 variables for 120 entires, though some data points are missing.
 
-For more information on the experiment, the data, or any other files used in this paper see our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825) which can be found at https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825.  The coding languages used in the paper are R and SAS.  The corresponding code can be found in *Appendix A - R Code* and *Appendix B - SAS Code* respectively.
+For more information on the experiment, the data, or any other files used in this paper see our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825) which can be found at https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825.
+The coding languages used in the paper are R and SAS.
+The corresponding code can be found in *Appendix A - R Code* and *Appendix B - SAS Code* respectively.
 
 ## Variables
 
-As mentioned above the experiment used three different dietary treatments.  These were DDG, CON, and MET.  For the first two trimesters the heifers were given one of seven developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.  This is recorded in the `Calan.Treatment` column of the data set.  
+As mentioned above the experiment used three different dietary treatments.
+These were DDG, CON, and MET.
+For the first two trimesters the heifers were given one of seven developmental treatments, found in `Development.Treatment`, and then in the final trimester the each was given one of the three treatments mentioned above.
+This is recorded in the `Calan.Treatment` column of the data set.
 
-The heifers were placed into one of four pens by weight, which can be seen in the column `Pen #`.  They were then artificially inseminated from an assigned sire, which we will assume was done randomly since the client says weight was not a factor.  The sire is represented by the column of the same name and has six unique entries.
+The heifers were placed into one of four pens by weight, which can be seen in the column `Pen #`.
+They were then artificially inseminated from an assigned sire, which we will assume was done randomly since the client says weight was not a factor.
+The sire is represented by the column of the same name and has six unique entries.
 
-Upon the birth of the calves, several measurements were taken.  These include the sex of the calf, weights taken at both birth and slaughter, and scores of both the calf's vigor and the ease of birth.  The variable names line up with these descriptions.
+Upon the birth of the calves, several measurements were taken.
+These include the sex of the calf, weights taken at both birth and slaughter, and scores of both the calf's vigor and the ease of birth.
+The variable names line up with these descriptions.
 
-Other variables, such as the id of the calf, length of gestation for the heifer, and postmortem scoring such as hot carcass weight (HCW) are included as well.  (@UNLBeef).  Note two birthdays are included in the data, `Birth.date` and `Birth.date.1`.  These variables will not be used in the models below so no further investigation was done on our part to determine the differences.  
+Other variables, such as the id of the calf, length of gestation for the heifer, and postmortem scoring such as hot carcass weight (HCW) are included as well.
+(@UNLBeef).
+Note two birthdays are included in the data, `Birth.date` and `Birth.date.1`.
+These variables will not be used in the models below so no further investigation was done on our part to determine the differences.
 
-The client's main focus is the effect the third trimester treatment and the sex of a calf have on the calf's vigor score, ease of birth score, and final body weight.  Therefore, these are the variables we will place more of an emphasis on, while exploring the effect some of the other variables may have.
-
+The client's main focus is the effect the third trimester treatment and the sex of a calf have on the calf's vigor score, ease of birth score, and final body weight.
+Therefore, these are the variables we will place more of an emphasis on, while exploring the effect some of the other variables may have.
 
 ## Missing Data
 
 **UPDATE THIS AFTER SEEING WHAT VARIABLES ARE NEEDED FOR THE MODEL**
 
-The data contains some missing values.  In regards to the five variables the client is most interested in, 19 entries are missing one or more values.  Since that still leaves 101 entries with all five variables 
-
+The data contains some missing values.
+In regards to the five variables the client is most interested in, 19 entries are missing one or more values.
+Since that still leaves 101 entries with all five variables
 
 ## Cleaning the dataset
-The dataset format is not in correct variable type. At first need to change the variable type. Accept Id AND Pen all other variables were in categorical type. After cleaning the dataset, here is the updated classification:
 
-Categorical Variables:
-Birth date
-Development Treatment
-Calan Treatment
-Calved First 21 Days
-Calving Ease
-Calf Vigor
-Birth date .1
-Sire
-SEX
+The dataset format is not in correct variable type.
+At first need to change the variable type.
+Accept Id AND Pen all other variables were in categorical type.
+After cleaning the dataset, here is the updated classification:
 
-Quantitative Variables:
-ID
-Pen #
-Initial BW
-Final BW
-DMI
-ADG
-Gest Length
-1st Calf BW
-Final Calf BW
-HCW
-REA
-YG
-BF
+Categorical Variables: Birth date Development Treatment Calan Treatment Calved First 21 Days Calving Ease Calf Vigor Birth date .1 Sire SEX
+
+Quantitative Variables: ID Pen \# Initial BW Final BW DMI ADG Gest Length 1st Calf BW Final Calf BW HCW REA YG BF
 
 ```{r}
 read.csv("data.csv")
@@ -102,7 +100,9 @@ data <- data %>%
 str(data)
 head(data)
 ```
+
 **Ryan's old file code**
+
 ```{r, , fig.pos="H"}
 #| label: data-setup
 #| echo: false
@@ -121,7 +121,9 @@ data <- data[complete.cases(data[, neededvars]), ]
 head(data)
 str(data)
 ```
-**Ryan's old file code** [I include this part in next chunk]
+
+**Ryan's old file code** \[I include this part in next chunk\]
+
 ```{r, , fig.pos="H"}
 #| label: Scratch-work
 #| echo: false
@@ -137,6 +139,7 @@ sum(rowSums(is.na(data)) > 0)
 ```
 
 **Ryan's old file**
+
 ```{r, , fig.pos="H"}
 #| label: data-setup
 #| echo: false
@@ -159,25 +162,19 @@ data <- data[complete.cases(data[, neededvars]), ]
 
 ```
 
-
-
-
 ## Misiing Value
 
 Columns with Missing Values:
 
-Pen #: 4 missing values
-DMI: 36 missing values
-SEX: 1 missing value
-Unique Levels:
+Pen #: 4 missing values DMI: 36 missing values SEX: 1 missing value Unique Levels:
 
-Sire: 6 unique levels
-Development Treatment: 7 unique levels
-Rows with Missing Data:
+Sire: 6 unique levels Development Treatment: 7 unique levels Rows with Missing Data:
 
 34 rows contain at least one missing value.
 
-The heatmap above visualizes the distribution of missing data in the dataset. Columns with missing values (e.g., "Pen #", "DMI", and "SEX") are marked with red line gaps.
+The heatmap above visualizes the distribution of missing data in the dataset.
+Columns with missing values (e.g., "Pen \#", "DMI", and "SEX") are marked with red line gaps.
+
 ```{r, , fig.pos="H"}
 #| label: Scratch-work
 #| echo: false
@@ -227,7 +224,12 @@ sum(rowSums(is.na(data)) > 0)
 ```
 
 # Handling Missing Value
-This code cleans a dataset by replacing all occurrences of . with NA to standardize missing values. It ensures columns are assigned the correct data types, converting numeric-like columns to numeric and others to factor. Missing values are handled by imputing the median for numeric columns and the mode for factor columns. After cleaning, the code verifies that no missing values remain in the dataset.
+
+This code cleans a dataset by replacing all occurrences of .
+with NA to standardize missing values.
+It ensures columns are assigned the correct data types, converting numeric-like columns to numeric and others to factor.
+Missing values are handled by imputing the median for numeric columns and the mode for factor columns.
+After cleaning, the code verifies that no missing values remain in the dataset.
 
 ```{r}
 # Load necessary library
@@ -260,6 +262,7 @@ summary(data)
 sum(is.na(data)) # Total missing values remaining
 View(data)
 ```
+
 ```{r}
 
 library(readr)
@@ -290,7 +293,10 @@ write.csv(data, "rm_data.csv", row.names = FALSE)
 ```
 
 ## Summary Statistic
-[Note: I did seperately and together both way. whichever you like add that only]
+
+\[Note: I did seperately and together both way.
+whichever you like add that only\]
+
 ```{r}
 # Load necessary libraries
 library(dplyr)
@@ -363,8 +369,12 @@ ggplot(data2, aes(x = SEX, y = Final.Calf.BW, fill = SEX)) +
 
 ```
 
-**Interpretation of Box plot for Calf Body Weight:**
-MET treatment consistently shows the highest median final body weight, followed by DDG, while CON has the lowest median and the narrowest range. STR (steers) exhibit higher median body weights and greater variability compared to HFR (heifers), which show narrower distributions. Outliers are more pronounced in MET and STR groups, reflecting individual variation among calves. These findings suggest MET is the most effective treatment for promoting growth, while CON may be limited in its ability to achieve higher body weights. Overall, both treatment and sex significantly influence calf body weight outcomes
+**Interpretation of Box plot for Calf Body Weight:** MET treatment consistently shows the highest median final body weight, followed by DDG, while CON has the lowest median and the narrowest range.
+STR (steers) exhibit higher median body weights and greater variability compared to HFR (heifers), which show narrower distributions.
+Outliers are more pronounced in MET and STR groups, reflecting individual variation among calves.
+These findings suggest MET is the most effective treatment for promoting growth, while CON may be limited in its ability to achieve higher body weights.
+Overall, both treatment and sex significantly influence calf body weight outcomes
+
 ```{r}
 
 data2 <- read.csv("removed_missing_data.csv")
@@ -406,14 +416,23 @@ grid.arrange(plot1, plot2, plot3, plot4, nrow = 2, ncol = 2)
 
 ```
 
-
 # Exploring the Data
- **Relationship between treatments and calf sex**
-The cross-tabulation shows a relatively balanced distribution of calf sex across treatments. In the CON group, there are slightly more HFR (heifers) than STR (steers), with 19 and 15 calves, respectively. The DDG group has more STR (20) compared to HFR (14), while the MET group is more evenly distributed with 18 HFR and 15 STR. Overall, the distribution of sexes across treatments suggests no significant bias in the assignment of calves, supporting a fair experimental design. The slightly higher proportion of STR in DDG might warrant further exploration but does not indicate a major imbalance.
 
-MET treatment consistently produces the highest median final body weights for both sexes, with STR (steers) outperforming HFR (heifers) across all treatments. Higher vigor scores (2 and 3) are linked to greater body weights, particularly under the MET treatment, which shows the largest variability and outliers. Easier births (calving ease scores of 1) are associated with higher body weights, with MET-treated calves and STR consistently achieving the best outcomes. Across all analyses, the MET treatment emerges as the most favorable, with DDG showing intermediate performance and CON yielding the lowest body weights. These results highlight the significant influence of treatment, sex, calf vigor, and calving ease on final Calf body weight outcomes.
+**Relationship between treatments and calf sex** The cross-tabulation shows a relatively balanced distribution of calf sex across treatments.
+In the CON group, there are slightly more HFR (heifers) than STR (steers), with 19 and 15 calves, respectively.
+The DDG group has more STR (20) compared to HFR (14), while the MET group is more evenly distributed with 18 HFR and 15 STR.
+Overall, the distribution of sexes across treatments suggests no significant bias in the assignment of calves, supporting a fair experimental design.
+The slightly higher proportion of STR in DDG might warrant further exploration but does not indicate a major imbalance.
 
-[Note: I think we need to focus on calf body wight. Not the body weight of mother cow]
+MET treatment consistently produces the highest median final body weights for both sexes, with STR (steers) outperforming HFR (heifers) across all treatments.
+Higher vigor scores (2 and 3) are linked to greater body weights, particularly under the MET treatment, which shows the largest variability and outliers.
+Easier births (calving ease scores of 1) are associated with higher body weights, with MET-treated calves and STR consistently achieving the best outcomes.
+Across all analyses, the MET treatment emerges as the most favorable, with DDG showing intermediate performance and CON yielding the lowest body weights.
+These results highlight the significant influence of treatment, sex, calf vigor, and calving ease on final Calf body weight outcomes.
+
+\[Note: I think we need to focus on calf body wight.
+Not the body weight of mother cow\]
+
 ```{r, , fig.pos="H"}
 #| label: Scratch work
 #| echo: false
@@ -467,19 +486,30 @@ ggplot(data2, aes(x = Calving.Ease, y = Final.Calf.BW, color = SEX, shape = Cala
 
 ```
 
-## Model [Note: Start adding from here]
-data2 <- read.csv("removed_missing_data.csv")[I used data2 as before by assigning the new csv file]
+## Model \[Note: Start adding from here\]
 
+data2 \<- read.csv("removed_missing_data.csv")\[I used data2 as before by assigning the new csv file\]
 
 ## Ordinal Logistic Regression Model
+
 **Ordinal Logistic Regression Model for Calf Vigor**
 
-Since calving ease is a score from one to three it can be considered an ordinal variable.  This means instead of treating it as a quantitative variable as we did previously, it could be considered an ordered categorical variable.  One method of modeling ordinal variables is with ordinal logistic regression, or OLS.  This uses one or more independent variables to predict the ordinal value of the dependent variable.  A key assumption of OLS, outside of the dependent variable being ordinal, is no multicollinearity between independent variables.  (@StAndrews).
+Since calving ease is a score from one to three it can be considered an ordinal variable.
+This means instead of treating it as a quantitative variable as we did previously, it could be considered an ordered categorical variable.
+One method of modeling ordinal variables is with ordinal logistic regression, or OLS.
+This uses one or more independent variables to predict the ordinal value of the dependent variable.
+A key assumption of OLS, outside of the dependent variable being ordinal, is no multicollinearity between independent variables.
+(@StAndrews).
 
-Let's attempt to apply an OLS to the calving ease variable.  In this simple case we will use the third trimester treatment and the calf's sex as the independent variables. As we saw in @fig-chi, multicollinearity is not a problem with these variables, so we may procede.
+Let's attempt to apply an OLS to the calving ease variable.
+In this simple case we will use the third trimester treatment and the calf's sex as the independent variables.
+As we saw in @fig-chi, multicollinearity is not a problem with these variables, so we may procede.
 
-**Interpretation**
-The ordinal logistic regression model for Calf.Vigor shows no statistically significant main effects for Calan.Treatment (DDG, MET) or SEX (STR vs. HFR), nor their interactions (p>0.05). The thresholds between vigor levels are significant (p=0.017 for 1∣2,p=0.001 for 2∣3), indicating that the ordinal levels are distinct, validating the use of this model. The model's residual deviance is 113.059 with an AIC of 127.059, suggesting reasonable fit but limited explanatory power for the predictors. Overall, the findings indicate that neither treatment nor sex strongly influences vigor scores, though the response levels remain ordinally structured. Further exploration of additional covariates may be needed to explain variability in Calf.Vigor
+**Interpretation** The ordinal logistic regression model for Calf.Vigor shows no statistically significant main effects for Calan.Treatment (DDG, MET) or SEX (STR vs. HFR), nor their interactions (p\>0.05).
+The thresholds between vigor levels are significant (p=0.017 for 1∣2,p=0.001 for 2∣3), indicating that the ordinal levels are distinct, validating the use of this model.
+The model's residual deviance is 113.059 with an AIC of 127.059, suggesting reasonable fit but limited explanatory power for the predictors.
+Overall, the findings indicate that neither treatment nor sex strongly influences vigor scores, though the response levels remain ordinally structured.
+Further exploration of additional covariates may be needed to explain variability in Calf.Vigor
 
 ```{r}
 library(MASS)
@@ -503,8 +533,8 @@ print(coefs)
 
 ```
 
-**Improvement of the model**
-This model is not improving also
+**Improvement of the model** This model is not improving also
+
 ```{r}
 vigor_model_improved <- polr(Calf.Vigor ~ Calan.Treatment * SEX + Pen.. + Sire + Initial.BW, data = data2, Hess = TRUE)
 vigor_model_improved
@@ -516,10 +546,10 @@ coefs <- cbind(coefs, "p-value" = p_values)
 print(coefs)
 ```
 
-
-**Comparison**
-Since they're not significant. No need to compare.
+**Comparison** Since they're not significant.
+No need to compare.
 From the VIF score, there's multicollenearity for Sex variable
+
 ```{r}
 
 # Perform pairwise comparisons using estimated marginal means
@@ -529,8 +559,12 @@ pairs(emm_vigor)
 
 ```
 
-**Model 2: Multinomial Logistic Regression for Calf Vigor**
-The multinomial logistic regression model for Calf.Vigor with three levels (1,2,3) considers predictors Calan.Treatment (Con,DDG, MET), SEX (STR, HFR), and their interactions. None of the predictors or interaction terms are statistically significant, as all coefficients have large standard errors, indicating instability due to data sparsity. The residual deviance (104.3791) and AIC (128.3791) suggest a moderate fit, but high uncertainty in some estimates (e.g., for MET and SEXSTR) limits interpretability. The sparse combinations of response levels with predictors likely caused the inflated standard errors and poor precision. Addressing sparsity (e.g., collapsing categories or balancing the dataset) and simplifying the model (e.g., removing interactions) are essential next steps for improving the analysis
+**Model 2: Multinomial Logistic Regression for Calf Vigor** The multinomial logistic regression model for Calf.Vigor with three levels (1,2,3) considers predictors Calan.Treatment (Con,DDG, MET), SEX (STR, HFR), and their interactions.
+None of the predictors or interaction terms are statistically significant, as all coefficients have large standard errors, indicating instability due to data sparsity.
+The residual deviance (104.3791) and AIC (128.3791) suggest a moderate fit, but high uncertainty in some estimates (e.g., for MET and SEXSTR) limits interpretability.
+The sparse combinations of response levels with predictors likely caused the inflated standard errors and poor precision.
+Addressing sparsity (e.g., collapsing categories or balancing the dataset) and simplifying the model (e.g., removing interactions) are essential next steps for improving the analysis
+
 ```{r}
 library(nnet)
 vigor_model_2 <- multinom(Calf.Vigor ~ Calan.Treatment * SEX, data = data2)
@@ -539,6 +573,7 @@ summary(vigor_model_2)
 ```
 
 Even without interaction this model is not fitting good
+
 ```{r}
 library(nnet)
 vigor_model_3 <- multinom(Calf.Vigor ~ Calan.Treatment + SEX, data = data2)
@@ -558,7 +593,12 @@ From the VIF score, there's multicollenearity for Sex variable
 For Multinomial- The assumption of linearity in the log-odds for Final Calf Body Weight is not satisfied.
 This non-linearity suggests the need for transformations or more flexible modeling techniques.
 
-The Ordinal Logistic Regression (OLR) model shows a smoother relationship between Final Body Weight and log-odds of Calf.Vigor = 2, with stable predictions even in sparse regions. In contrast, the Multinomial Logistic Regression (MLR) model demonstrates greater variability, with sharp fluctuations influenced by sparse data at the extremes, capturing more detailed patterns. OLR handles data sparsity better and assumes proportional odds, making it simpler and more interpretable. MLR provides flexibility for datasets with complex structures but risks overfitting in regions with fewer observations. Overall, OLR is preferred for stability and interpretability, while MLR is more appropriate if the proportional odds assumption is violated or additional complexity is necessary.
+The Ordinal Logistic Regression (OLR) model shows a smoother relationship between Final Body Weight and log-odds of Calf.Vigor = 2, with stable predictions even in sparse regions.
+In contrast, the Multinomial Logistic Regression (MLR) model demonstrates greater variability, with sharp fluctuations influenced by sparse data at the extremes, capturing more detailed patterns.
+OLR handles data sparsity better and assumes proportional odds, making it simpler and more interpretable.
+MLR provides flexibility for datasets with complex structures but risks overfitting in regions with fewer observations.
+Overall, OLR is preferred for stability and interpretability, while MLR is more appropriate if the proportional odds assumption is violated or additional complexity is necessary.
+
 ```{r}
 library(car)
 vif(vigor_model_1)
@@ -598,15 +638,45 @@ table(data2$Calf.Vigor, data2$Calan.Treatment, data2$SEX)
 
 
 ```
+# Binomail Model for Calf Vigor
+
 
 ```{r}
+data2$Calf.Vigor <- factor(ifelse(data2$Calf.Vigor == 3 | data2$Calf.Vigor == 2, 2, 1), 
+                           levels = c(1, 2), 
+                           labels = c("Low", "High"))
+binary_model1 <- glm(Calf.Vigor ~ Calan.Treatment + SEX, data = data2, family = binomial)
+summary(binary_model1)
+
+```
+
+# Checking Assumption for Calf Vigor
+
+```{r}
+# 2. Multicollinearity
+library(car)
+vif(binary_model1)  # Variance Inflation Factor
+
+# 3. Influential observations (Cook's Distance)
+influence <- cooks.distance(binary_model1)
+plot(influence, type = "h", main = "Cook's Distance")
+abline(h = 4 / nrow(data2), col = "red")  # Threshold for influential points
+
+
+# 5. Residual analysis (deviance residuals)
+plot(residuals(binary_model1, type = "deviance"), main = "Deviance Residuals")
+abline(h = 0, col = "red")
 
 ```
 
 
 **Model 1: OLR for Calving Ease**
 
-The ordinal logistic regression model for Calving.Ease reveals that the treatment DDG has a strong and significant negative effect compared to the reference treatment CON (p<0.001), indicating lower odds of higher ease scores. In contrast, MET shows no significant effect compared to CON (p=0.354). The interaction between DDG and SEXSTR (Steer) is strongly significant (p<0.001), suggesting that the impact of DDG depends on calf sex, while the interaction between MET and SEXSTR is not significant (p=0.149). The significant thresholds confirm that the ordinal levels of Calving.Ease are distinct. Overall, the model highlights significant effects for DDG and its interaction with calf sex, while other predictors do not show substantial influence.
+The ordinal logistic regression model for Calving.Ease reveals that the treatment DDG has a strong and significant negative effect compared to the reference treatment CON (p\<0.001), indicating lower odds of higher ease scores.
+In contrast, MET shows no significant effect compared to CON (p=0.354).
+The interaction between DDG and SEXSTR (Steer) is strongly significant (p\<0.001), suggesting that the impact of DDG depends on calf sex, while the interaction between MET and SEXSTR is not significant (p=0.149).
+The significant thresholds confirm that the ordinal levels of Calving.Ease are distinct.
+Overall, the model highlights significant effects for DDG and its interaction with calf sex, while other predictors do not show substantial influence.
 
 ```{r}
 # Ensure Calving.Ease is an ordered factor
@@ -628,9 +698,12 @@ print(coefs)
 
 ```
 
+**Model 2: Multinomial Logistic Regression for Calf Calving Ease** The multinomial logistic regression model for Calving.Ease successfully converged, with a residual deviance of 58.42 and an AIC of 82.42, indicating moderate model fit.
+Extreme coefficients (e.g., −89.53 for Calan.TreatmentDDG) and large standard errors, especially for level 3, suggest data sparsity and instability in the estimates.
+Warnings for negative variance estimates point to multicollinearity or insufficient data for reliable interaction and treatment effect estimation.
+Post-hoc Tukey comparisons showed no significant differences between treatments (p=1.000), and missing standard errors (NaN) highlight issues with data variability.
+Overall, the model's results are unreliable due to data limitations, necessitating simplified modeling or alternative approaches.
 
-**Model 2: Multinomial Logistic Regression for Calf Calving Ease**
-The multinomial logistic regression model for Calving.Ease successfully converged, with a residual deviance of 58.42 and an AIC of 82.42, indicating moderate model fit. Extreme coefficients (e.g., −89.53 for Calan.TreatmentDDG) and large standard errors, especially for level 3, suggest data sparsity and instability in the estimates. Warnings for negative variance estimates point to multicollinearity or insufficient data for reliable interaction and treatment effect estimation. Post-hoc Tukey comparisons showed no significant differences between treatments (p=1.000), and missing standard errors (NaN) highlight issues with data variability. Overall, the model’s results are unreliable due to data limitations, necessitating simplified modeling or alternative approaches.
 ```{r}
 library(nnet)
 ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
@@ -643,8 +716,11 @@ emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
 pairs(emm_ease)
 
 ```
+
 # Checking Assumption
-From VIF, Holding the assumptions for both model 
+
+From VIF, Holding the assumptions for both model
+
 ```{r}
 library(car)
 vif(ease_model_3)
@@ -677,19 +753,52 @@ ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
 ```
 
 
+# Binomial for Calving Ease
+
+```{r}
+data2$Calving.Ease <- factor(ifelse(data2$Calving.Ease == 3 | data2$Calving.Ease == 2, 2, 1), 
+                           levels = c(1, 2), 
+                           labels = c("Low", "High"))
+binary_model_ease <- glm(Calving.Ease ~ Calan.Treatment + SEX, data = data2, family = binomial)
+summary(binary_model_ease)
+```
+# Checking Assumption for Binomial
+
+```{r}
+
+# 2. Multicollinearity
+library(car)
+vif(binary_model_ease)  # Variance Inflation Factor
+
+# 3. Influential observations (Cook's Distance)
+influence <- cooks.distance(binary_model_ease)
+plot(influence, type = "h", main = "Cook's Distance")
+abline(h = 4 / nrow(data2), col = "red")  # Threshold for influential points
+
+
+# 5. Residual analysis (deviance residuals)
+plot(residuals(binary_model_ease, type = "deviance"), main = "Deviance Residuals")
+abline(h = 0, col = "red")
+
+```
 
 
 ## Mixed Model
 
 SAS output
 
-![Fig-1](mix.1.png)
+![Fig-1](mix.1.png) 
+
 ![Fig-2](mix.ls.png)
 
 ![Fig-1](mix.res.png)
 
-**Linear Mixed Model for Final Calf Body Weight**
-The linear mixed model shows that Final Calf Body Weight is significantly higher for Steers (STR) compared to Heifers (HFR) (p<0.05), but there are no significant differences between treatments (CON, DDG, MET) or their interactions with sex. The random effect for Sire contributes variance (237423742374), while Pen has negligible variance (000), indicating it does not affect body weight. Tukey HSD and pairwise comparisons confirm no significant differences between treatments within or across sexes (p>0.05p > 0.05p>0.05). The high residual variance (124841248412484) suggests unaccounted variability, indicating that additional predictors might improve the model. Overall, treatment effects are not significant, but sex remains an important factor influencing final body weight.
+**Linear Mixed Model for Final Calf Body Weight** The linear mixed model shows that Final Calf Body Weight is significantly higher for Steers (STR) compared to Heifers (HFR) (p\<0.05), but there are no significant differences between treatments (CON, DDG, MET) or their interactions with sex.
+The random effect for Sire contributes variance (237423742374), while Pen has negligible variance (000), indicating it does not affect body weight.
+Tukey HSD and pairwise comparisons confirm no significant differences between treatments within or across sexes (p\>0.05p \> 0.05p\>0.05).
+The high residual variance (124841248412484) suggests unaccounted variability, indicating that additional predictors might improve the model.
+Overall, treatment effects are not significant, but sex remains an important factor influencing final body weight.
+
 ```{r}
 library(lme4)
 weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
@@ -708,17 +817,38 @@ emm_weight <- emmeans(weight_model_6, ~ Calan.Treatment | SEX)
 pairs(emm_weight)
 ```
 
-**[Note]**
-[Haven't made the updated ANCOVA]
-5 model done. Probably multinomail need to remove but need to find out better model. Let's take decision after talking with her. 
-1. ANCOVA Model for Final Calf Weight
+
+# ANCOVA Model for Final Calf Weight
+
+**SAS Output**
+![Fig-1](an.1.png)
+
+![Fig-1](an.2.png)
+
+![Fig-1](an.3.png)
+
+![Fig-1](an.4.png)
+
+![Fig-1](an.5.png)
+
+**Checking Assumptions**
+
+![Fig-1](an.res-1.png)
+
+![Fig-1](an.res-2.png)
+
+![Fig-1](an.res-3.png)
+
+![Fig-1](an.res-4.png)
+
+
 ```{r, , fig.pos="H"}
 #| label: Scratch work
 #| echo: false
 #| eval: false
 
 # Fit ANCOVA model
-ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Final.BW, data = data2)
+ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
 
 # Summarize the model
 summary(ancova_model)
@@ -736,6 +866,7 @@ plot(ancova_model)
 # If needed (for using later)
 
 **Model 1: LM for Final Calf Weight**
+
 ```{r}
 weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
 summary(weight_model_5)
@@ -743,6 +874,7 @@ summary(weight_model_5)
 ```
 
 **Comparison**
+
 ```{r}
 
 # Ensure Calan.Treatment is a factor
@@ -763,6 +895,7 @@ summary(tukey_weight)
 ```
 
 **Post Hoc Test**
+
 ```{r}
 library(emmeans)
 
@@ -772,8 +905,8 @@ pairs(emm)
 
 ```
 
-
 **2. OLR Model**
+
 ```{r}
 library(MASS)
 
@@ -794,7 +927,9 @@ print(coefs)
 
 
 ```
+
 **3. Binary Logistic Regression with GLM**
+
 ```{r}
 # Dichotomize Calf Vigor (example: low = 1, 2; high = 3, 4, 5)
 data$Calf.Vigor.Binary <- ifelse(data$Calf.Vigor %in% c(1, 2), "Low", "High")
@@ -810,9 +945,6 @@ summary(vigor_model_glm)
 
 ```
 
-
-
-
 ```{r, , fig.pos="H"}
 #| label: fig-summarystats
 #| echo: false
@@ -820,7 +952,6 @@ summary(vigor_model_glm)
 
 
 ```
-
 
 ```{r, , fig.pos="H"}
 #| label: fig-normallity
@@ -840,10 +971,7 @@ summary(vigor_model_glm)
 
 # Potential models
 
-
 ## Model 1
-
-
 
 $$
 y_{ijklmn} = ENTER-MODEL-HERE
@@ -851,7 +979,7 @@ $$
 
 where $y_{ijklm}$ represents the *dependent variable*, ...
 
-```![Picture of SAS Output](filename.png){width="3in"}```
+`![Picture of SAS Output](filename.png){width="3in"}`
 
 # Conclusion
 
@@ -880,13 +1008,10 @@ where $y_{ijklm}$ represents the *dependent variable*, ...
 # Appendix B - SAS Code
 
 ``` sas
-
 ```
 
 \newpage
 
 # Appendix C - Additional SAS Output
 
-
-
-```![](filename.png)```
+`![](filename.png)`
