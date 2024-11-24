@@ -116,6 +116,8 @@ Of the other four variables the client was most interested in, none have more th
 #| fig-cap: "Chart counting the number of missing values for each variable within the data."
 #| echo: false
 #| eval: true
+#| fig-width: 5
+#| fig-height: 3
 
 gg_miss_var(data) +
   ggtitle("Missing Data Distribution") +
@@ -429,7 +431,7 @@ data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
 
 ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
 
-summary(ease_model_3)
+#summary(ease_model_3)
 
 coefs <- coef(summary(ease_model_3))
 p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
@@ -451,9 +453,24 @@ The MET treatment did not provide a statistically significant effect though.
 We did revcieve and AIC of 79.95121 as well, which seemed decent to us.
 (@OLR).
 
+```{r, , fig.pos="H"}
+#| label: fig-OLS-Ease-Pairwise
+#| echo: false
+#| eval: true
+#| fig-cap: "Pairwise comparisons for ordinal logistic regression."
+
+emmeans_result <- emmeans(ease_model_3, ~ Calan.Treatment * SEX)
+pairwise_comparisons <- contrast(emmeans_result, method = "pairwise")
+pairwise_treatment <- emmeans(ease_model_3, pairwise ~ Calan.Treatment | SEX)
+pairwise_comparisons <- contrast(emmeans_result, method = "pairwise", adjust = "bonferroni")
+pairwise_df <- as.data.frame(summary(pairwise_comparisons))
+kable(pairwise_df)
+```
+
 ## Multinomial Logistic Regression
 
-In search of another model we considered a multinomial logistic regression.  The model used the same independent variables as before, but showed no improvement in terms of significance. Additionally the model returned a higher AIC value, indicating it is a worse fit.  We are not showing output for this model due to concerns with the nature of the data.  Multinomial logistic regression is designed to model nominal data, which is categorical data without an order.
+In search of another model we considered a multinomial logistic regression.  The model used the same independent variables as before, but resulted in fewer significant terms.
+While the AIC of this model indicated it still fit decently, we are not showing output for this model due to concerns with the nature of the data.  Multinomial logistic regression is designed to model nominal data, which is categorical data without an order.
 (@Multi).  For these reasons we chose to go in another direction and not recommend this model.
 
 
@@ -465,253 +482,122 @@ In this case we would have two categories for the calving ease score: low, which
 A type of model that fits binomial data like this is a binomial regression.
 While this may not make a huge difference given that we have no scores larger than three, we want to see how this model compares to the last.
 
-For this model, we chose to use the same two explanatory variables, third trimester treatment and sex of the calf.  In this case let $\pi$ be the probability of success given the explanatory variables, $X_{trt}$ and $X_{sex}$ respectively.  In other words $\pi=P(Y=high|X_{trt},X_{sex})$ where $Y$ is the same random variable as before, but is only ever $low$ or $high$.  Binomial regression uses $\pi$ in a similar logit function as the ordinal logistic regression.  Thus we can write the model as,
+For this model, we chose to use the same two explanatory variables, third trimester treatment and sex of the calf.  In this case let $\pi$ be the probability of a high score given the explanatory variables, $X_{trt}$ and $X_{sex}$ respectively.  In other words $\pi=P(Y=high|X_{trt},X_{sex})$ where $Y$ is the same random variable as before, but is only ever $low$ or $high$.  Binomial regression uses $\pi$ in a similar logit function as the ordinal logistic regression.  Thus we can write the model as,
 
 $$
-\ln \left( \frac{\pi}{1-\pi} \right) = \beta_0 + \beta_1 X_{trt} + \beta_2 X_{sex}
+\ln \left( \frac{\pi}{1-\pi} \right) = \beta_0 + \beta_1 X_{trt} + \beta_2 X_{sex}+\beta_3(X_{trt} \times X_{sex})
 $$
-where $\beta_0$ is the intercept of the model and $\beta_1$ and $\beta_2$ are the coefficients for $X_{trt}$ and $X_{sex}$ respectively.  
+where $\beta_0$ is the intercept of the model and $\beta_1$, $\beta_2$ and $\beta_3$ are the coefficients for $X_{trt}$, $X_{sex}$, and their interaction respectively. (@bino). 
+For this model MET is considered to be the default treatment, while steer is the default sex. 
 
+![*Fit Statistics* and other tests.](Bin.ease-1.png)
 
+In the *Joint Tests* table above we can see the interaction terms are insignificant.  This means we can look at main effects for each variable level. These can be seen in the *Analysis of Maximum Likelihood Estimates* below, but all terms outside of the intercept are insignificant as well.
 
-**SAS Output** 
+![*Analysis of Maximum Likelihood Estimates* table.](Bin.eas-2.png)
 
-The model's fit statistics, including an AIC of 66.599 and -2 Log Likelihood of 54.599, indicate moderate model fit, but the AIC value lower than the OLR and MLR that indicates Binomial as better fitting. The global null hypothesis tests fail to reject the null (p>0.05), suggesting that adding covariates does not significantly improve the model over the intercept-only model. Joint tests reveal no significant contributions from either the main effects (Calan.Treatment and SEX) or their interaction, with p-values of 0.2970, 0.2336, and 0.3718, respectively. The maximum likelihood estimates show that the intercept is significant (p=0.0317), indicating meaningful baseline odds, but none of the predictor estimates are statistically significant, showing no strong evidence of their association with Calving Ease. Odds ratios and their confidence intervals for all predictors and interactions, including Calan.Treatment and SEX, cross the value of 1, signifying no significant effects on the outcome. The percent concordance (63.9%) and Somers’ D (0.440) indicate moderate predictive performance, while the odds ratio plot visually confirms the lack of significant associations for the predictors and their interactions.
+Elsewhere in the output, which can be seen in *Appendix C - Additional SAS Output*, the odds ratios and subsequent confidence intervals also indicated no significant results.  
 
-![Fig-1](Bin.eas-1.png)
+While the lack of significant terms seems detrimental, the AIC of the model is 66.599, indicating a decent fit.  However, we cannot compare this value to the AIC of the ordinal logistic model since they are different types of models. (@aic).  This is backed up by the percent concordance (63.9%) and Somers’ D (0.440), which suggest moderate predictive performance.
 
-![Fig-1](Bin.eas-2.png)
-![Fig-1](Bin.eas-3.png)
+## Recommended Model for Calving Ease
 
-![Fig-1](Bin.eas-4.png)
+We previously discussed three models for the calving ease score.  As we already indicated, the multinomial logistic regression is not the direction we would recommend.  In regards to the other two, model preference depends on the cleint's desired goal.  If these models are intended for purely predictive purposes, the binomial regression model may be effective.  However, if the client wants to study the impact the third trimester treatment and sex of the calf had on the ease score then we strongly recommend the ordinal logistic regression model over the other models discussed.
 
-```{r}
-data2$Calving.Ease.bin <- factor(ifelse(data2$Calving.Ease == 3 | data2$Calving.Ease == 2, 2, 1), 
-                           levels = c(1, 2), 
-                           labels = c("Low", "High"))
-binary_model_ease <- glm(Calving.Ease.bin ~ Calan.Treatment + SEX, data = data2, family = binomial)
-summary(binary_model_ease)
-```
-
-### Checking Assumption for Binomial
-
-The diagnostic analysis for the binomial model reveals that most observations have small Cook's distances, indicating limited influence on the model, although one observation with a slightly higher Cook's distance may require further investigation for potential undue influence. The deviance residuals plot shows that the majority of residuals are clustered near zero, signifying a good fit for most data points. However, a few residuals exceeding 2 or falling below -2 suggest possible outliers or cases where the model does not fit well, warranting closer examination of these observations. The Variance Inflation Factor (VIF) values for the predictors, Calan.Treatment (1.002557) and SEX (1.005121), are close to 1, confirming that there are no multicollinearity issues in the model. Overall, the diagnostics suggest the model fits the data well, with a few exceptions that may require additional scrutiny.
-
-So overall this model is fitting better thar ordinal and Multinomial
-```{r}
-
-# 3. Influential observations (Cook's Distance)
-influence <- cooks.distance(binary_model_ease)
-plot(influence, type = "h", main = "Cook's Distance")
-abline(h = 4 / nrow(data2), col = "red")  # Threshold for influential points
-
-
-# 5. Residual analysis (deviance residuals)
-plot(residuals(binary_model_ease, type = "deviance"), main = "Deviance Residuals")
-abline(h = 0, col = "red")
-
-# 2. Multicollinearity
-library(car)
-vif(binary_model_ease)  # Variance Inflation Factor
-
-```
+By using the ordinal logistic regression model
 
 # Models for Calf Vigor
 
 ## Ordinal Logistic Regression Model
 
-**Interpretation** 
-The ordinal logistic regression model for Calf.Vigor shows no statistically significant main effects for Calan.Treatment (DDG, MET) or SEX (STR vs. HFR), nor their interactions (p\>0.05).
-The thresholds between vigor levels are significant (p=0.017 for 1∣2,p=0.001 for 2∣3), indicating that the ordinal levels are distinct, validating the use of this model.
-The model's residual deviance is 113.059 with an AIC of 127.059, suggesting reasonable fit but limited explanatory power for the predictors.
-Overall, the findings indicate that neither treatment nor sex strongly influences vigor scores, though the response levels remain ordinally structured.
-Further exploration of additional covariates may be needed to explain variability in Calf.Vigor
+The similarities between the calving ease and calf vigor score make identifying potential models a much easier task, as what might fit calving ease score can also potentially fit the calf vigor score.  We will first look at an ordinal logistic regression model.  The model can once again be represented by the equation
+
+$$
+\ln\left(\frac{P(Y \leq l)}{P(Y > l)}\right)=
+\alpha_l-\beta_{trt}X_{trt}-\beta_{sex}X_{sex}-\beta_{trt:sex}(X_{trt} \times X_{sex})
+$$
+
+since the client is interested in the effect of the same explanatory variables on the score.
+This equation looks exactly the same as before, with the only changes being $Y$ now representing the calf vigor score and $l$ now ranging from one to eleven in real life.  (@Vigor). Note, within out cleaned data set, $l=1,2,3$ as it did for the ease score.
+
+While the dependent variable and equation are very similar to what we previously did the results of the model are not.  In @fig-OLS-Vigor we can see the interaction terms are non-significant.  The same can be said for the main effects meaning only the intercepts, $\alpha_l$, are significant.  This indicates neither of the explanatory variables seems to have much of an effect on the vigor score.  
 
 ```{r, , fig.pos="H"}
 #| label: fig-OLS-Vigor
 #| echo: false
 #| eval: true
+#| fig-cap: "Coefficients table for ordinal logistic regression."
 
 data2$Calf.Vigor <- factor(data2$Calf.Vigor, ordered = TRUE)
 
 vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
 
-summary(vigor_model_1)
+#summary(vigor_model_1)
 
 # Extract p-values
 coefs <- coef(summary(vigor_model_1))
 p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
 coefs <- cbind(coefs, "p-value" = p_values)
-print(coefs)
+#print(coefs)
+kable(coefs, 
+      digits = 3,  
+      format = "markdown")
 
 ```
 
+Additionally, the model returned an AIC of 127.059.  This is not bad on its own, and indicates the model fits decently.  The issues regarding the significance makes us skeptical of the model's predictive capability.  However, it may indicate the two explanatory variables just do not impact the vigor score in a significant way.  We will want to test other models before arriving at that conclusion though.
 
 
-```{r, , fig.pos="H"}
-#| label: fig-OLS-Vigor-Comp
-#| echo: false
-#| eval: true
+## Binomial Regression
 
-emm_vigor <- emmeans(vigor_model_1, ~ Calan.Treatment | SEX)
-pairs(emm_vigor)
+Given the lack of significance with the ordinal logistic regression model, we will look into the binomial example again.  As before we are condensing the vigor score into a *low* category and *high* category.  All of the scores of one fit in the former and the rest are in the latter.  Just as with the calving ease score, let $\pi$ be the probability of a high score.  Then, by using the same two explanatory variables again, we can write the model as
 
-```
+$$
+\ln \left( \frac{\pi}{1-\pi} \right) = \beta_0 + \beta_1 X_{trt} + \beta_2 X_{sex}+\beta_3(X_{trt} \times X_{sex})
+$$
 
-## WE NEED TO CUT OR SUMMARIZE THIS - Multinomial Logistic Regression
+Once again though, 
 
-The multinomial logistic regression model for Calf.Vigor with three levels (1,2,3) considers predictors Calan.Treatment (Con,DDG, MET), SEX (STR, HFR), and their interactions.
-None of the predictors or interaction terms are statistically significant, as all coefficients have large standard errors, indicating instability due to data sparsity.
-The residual deviance (104.3791) and AIC (128.3791) suggest a moderate fit, but high uncertainty in some estimates (e.g., for MET and SEXSTR) limits interpretability.
-The sparse combinations of response levels with predictors likely caused the inflated standard errors and poor precision.
-Addressing sparsity (e.g., collapsing categories or balancing the dataset) and simplifying the model (e.g., removing interactions) are essential next steps for improving the analysis
-
-```{r}
-library(nnet)
-vigor_model_2 <- multinom(Calf.Vigor ~ Calan.Treatment * SEX, data = data2)
-summary(vigor_model_2)
-
-```
-
-Even without interaction this model is not fitting good
-
-```{r}
-library(nnet)
-vigor_model_3 <- multinom(Calf.Vigor ~ Calan.Treatment + SEX, data = data2)
-summary(vigor_model_3)
-```
-
-```{r}
-
-AIC(vigor_model_1, vigor_model_2)
-
-```
-
-
-**Model 2: Multinomial Logistic Regression for Calf Vigor** 
-The multinomial logistic regression model for Calf.Vigor with three levels (1,2,3) considers predictors Calan.Treatment (Con,DDG, MET), SEX (STR, HFR), and their interactions.
-None of the predictors or interaction terms are statistically significant, as all coefficients have large standard errors, indicating instability due to data sparsity.
-The residual deviance (104.3791) and AIC (128.3791) suggest a moderate fit, but high uncertainty in some estimates (e.g., for MET and SEXSTR) limits interpretability.
-
-
-```{r, , fig.pos="H"}
-#| label: fig-MLR-Vigor
-#| echo: false
-#| eval: false
-
-library(nnet)
-vigor_model_2 <- multinom(Calf.Vigor ~ Calan.Treatment * SEX, data = data2)
-summary(vigor_model_2)
-
-```
-
-
-
-### Checking Assumption
-
-From the VIF score, there's multicollenearity for Sex variable
-
-For Multinomial- The assumption of linearity in the log-odds for Final Calf Body Weight is not satisfied.
-This non-linearity suggests the need for transformations or more flexible modeling techniques.
-
-The Ordinal Logistic Regression (OLR) model shows a smoother relationship between Final Body Weight and log-odds of Calf.Vigor = 2, with stable predictions even in sparse regions.
-In contrast, the Multinomial Logistic Regression (MLR) model demonstrates greater variability, with sharp fluctuations influenced by sparse data at the extremes, capturing more detailed patterns.
-OLR handles data sparsity better and assumes proportional odds, making it simpler and more interpretable.
-MLR provides flexibility for datasets with complex structures but risks overfitting in regions with fewer observations.
-Overall, OLR is preferred for stability and interpretability, while MLR is more appropriate if the proportional odds assumption is violated or additional complexity is necessary.
-
-```{r}
-library(car)
-vif(vigor_model_1)
-vif(vigor_model_2)
-
-# Create a new dataset with predicted probabilities
-data2$predicted_probs <- predict(vigor_model_1, type = "probs")
-
-# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
-library(ggplot2)
-ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
-  geom_point() +
-  geom_smooth(method = "loess", se = FALSE) +
-  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = OLR",
-       x = "Final Calf Body Weight",
-       y = "Predicted Probability")
-
-# Create a new dataset with predicted probabilities
-data2$predicted_probs <- predict(vigor_model_2, type = "probs")
-
-# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
-library(ggplot2)
-ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
-  geom_point() +
-  geom_smooth(method = "loess", se = FALSE) +
-  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = MLR",
-       x = "Final Calf Body Weight",
-       y = "Predicted Probability")
-
-
-```
-
-```{r}
-
-# Examine the distribution of Calf.Vigor across predictors
-table(data2$Calf.Vigor, data2$Calan.Treatment, data2$SEX)
-
-
-```
-
-## Binomail Model for Calf Vigor
-
-**SAS OUTPUT** 
-
+![*Analysis of Maximum Likelihood Estimates* table.](Bin.vig-2.png)
 
 ![Fig-1](Bin.vig-1.png)
 
-![Fig-1](Bin.vig-2.png)
+
 
 ![Fig-1](Bin.vig-3.png)
 
 ![Fig-1](Bin.vig-4.png)
 
-```{r}
-data2$Calf.Vigor <- factor(ifelse(data2$Calf.Vigor == 3 | data2$Calf.Vigor == 2, 2, 1), 
-                           levels = c(1, 2), 
-                           labels = c("Low", "High"))
-binary_model1 <- glm(Calf.Vigor ~ Calan.Treatment + SEX, data = data2, family = binomial)
-summary(binary_model1)
+## Recommended Model for Calf Vigor
 
-```
+**PICK ONE**
 
-## Checking Assumption for Calf Vigor
-
-```{r}
-# 2. Multicollinearity
-library(car)
-vif(binary_model1)  # Variance Inflation Factor
-
-# 3. Influential observations (Cook's Distance)
-influence <- cooks.distance(binary_model1)
-plot(influence, type = "h", main = "Cook's Distance")
-abline(h = 4 / nrow(data2), col = "red")  # Threshold for influential points
+Note we did fit a multinomial logistic regression model for the vigor score as well, but we ran into the same issues as before so no results are shown for the model in this paper.
 
 
-# 5. Residual analysis (deviance residuals)
-plot(residuals(binary_model1, type = "deviance"), main = "Deviance Residuals")
-abline(h = 0, col = "red")
-
-```
 
 # Models for Final Calf Weight
 
 ## Mixed Model
 
-SAS output
+Now we will look at models for investigating the effect the clients chosen explanatory variables have on the final body weight of the calf.  Since the body weight is a quantitative variable, we can turn to linear models.  We initially attempted to fit a simple model using only the third trimester treatment and sex of the calf, but ultimately chose to include the pen number and the sire of the calf as additional explanatory variables.  This slightly complicates the model as we believe the additional variables are better represented as random effects, meaning we are working with a mixed model.
+
+The purposed model and be represented as
+$$
+Y_{ijkl} = \mu + \alpha_i + \beta_j + (\alpha \beta)_{ij}+u_k+v_l+e_{ijkl}
+$$
+where $Y_{ijkl}$ represents the final weight for the $ith$ treatment,the $j$th sex, the $k$th pen, and the $l$th sire.  $\mu$ represents the overall mean, while $\alpha_i$ is the fixed effect for the $ith$ treatment, $\beta_j$ is the fixed effect for the $j$th sex, and $(\alpha \beta)_{ij}$ is their interaction.  For random effects the pen effect is represented by $u_k$ while the sire effect is shown by $v_l$.  We assume $u_k~N(0,\sigma_k^2)$, $v_l~N(0,\sigma_l^2)$, and the residual term $e_{ijkl}~N(0,\sigma^2)$.
+
+For a linear mixed model to work, the assumption regarding the distribution of the residuals must hold.  These can be checked graphically in the conditional residual plots below.  The histogram and Q-Q plot show if the residuals are approximately normal while the plot in the top left evaluates any multicollinearity concerns.  Thankfully the graphs give us no concerns as no trends are present in the top-left plot and the residuals are randomly distributed around zero, the histogram appears bell shaped around zero, and the Q-Q plot sees most points fall along the line, which is ideal.  Therefore we can procede with our mixed model.
+
+![Plots to check residual assumption.](mix.res.png)
+
+
 
 ![Fig-1](mix.1.png)
 
 ![Fig-2](mix.ls.png)
 
-![Fig-1](mix.res.png)
 
 **Linear Mixed Model for Final Calf Body Weight** The linear mixed model shows that Final Calf Body Weight is significantly higher for Steers (STR) compared to Heifers (HFR) (p\<0.05), but there are no significant differences between treatments (CON, DDG, MET) or their interactions with sex.
 The random effect for Sire contributes variance (237423742374), while Pen has negligible variance (000), indicating it does not affect body weight.
@@ -743,7 +629,13 @@ pairs(emm_weight)
 
 ## ANCOVA Model for Final Calf Weight
 
-**SAS Output** ![Fig-1](an.1.png)
+
+
+
+
+**SAS Output** 
+
+![Fig-1](an.1.png)
 
 ![Fig-1](an.2.png)
 
@@ -1067,3 +959,9 @@ run;
 \newpage
 
 # Appendix C - Additional SAS Output
+
+## Binomial Regression Model for Calving Ease
+
+![*Association of Predicted Probabilities and Observed Responses* and *Odds Ratio Estimates and Wald COnfidence Intervals* tables.](Bin.eas-3.png)
+
+![*Odds Ratios with 95% Wald COnfidence Limits* table.](Bin.eas-4.png)
