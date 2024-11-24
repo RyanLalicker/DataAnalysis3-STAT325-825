@@ -330,13 +330,26 @@ In both plots, we can see the initial weight of the mother heifer does not seem 
 
 Since calving ease is a score from one to three in our dataset and one to five in real life, it can be considered an ordinal variable.
 This means instead of treating it as a quantitative variable as we did previously, it could be considered an ordered categorical variable.
-One method of modeling ordinal variables is with ordinal logistic regression, or OLS.
+One method of modeling ordinal variables is with ordinal logistic regression.
 This uses one or more independent variables to predict the ordinal value of the dependent variable.
-A key assumption of OLS, outside of the dependent variable being ordinal, is no multicollinearity between independent variables.  (@StAndrews).
+A key assumption of ordinal logistic regression, outside of the dependent variable being ordinal, is no multicollinearity between independent variables.  (@StAndrews).
 
-Let's attempt to apply an OLS to the calving ease variable.
+Let's attempt to apply an ordinal logistic regression to the calving ease variable.
 In this simple case we will use the third trimester treatment and the calf's sex as the independent variables.
 As we saw in @fig-chi, multicollinearity is not a problem with these variables, so we may proceed.
+
+Ordinal logistic regression models are expressed in terms of a logit function containing probabilities rather than a single variable.  In this case, where $Y$ is a random variable representing the calving ease score and $l=1,2,...,5$ represents the possible values of $Y$, we can say
+
+$$
+\ln\left(\frac{P(Y \leq l)}{P(Y > l)}\right)=
+\alpha_l-\beta_{trt}X_{trt}-\beta_{sex}X_{sex}
+$$
+![Equation for calving ease ordinal logistic regression model.]
+
+In the equation above the left side is the log-odds, which is the logit function mentioned previously.  On the right side of the equation $\alpha_l$ is the intercept of the model at the $l$th level, $X_{trt}$ and $X_{sex}$ represent the values for the third trimester treatment and the sex respectively, and the $\beta_i$ are slope values corresponding to the $i$th explanatory variable.
+
+After fitting this model in R a significant difference between the DDG and CON was found.
+
 
 **Toma notes start here**
 **Model 1: OLR for Calving Ease**
