@@ -338,111 +338,65 @@ Let's attempt to apply an ordinal logistic regression to the calving ease variab
 In this simple case we will use the third trimester treatment and the calf's sex as the independent variables.
 As we saw in @fig-chi, multicollinearity is not a problem with these variables, so we may proceed.
 
-Ordinal logistic regression models are expressed in terms of a logit function containing probabilities rather than a single variable.  In this case, where $Y$ is a random variable representing the calving ease score and $l=1,2,...,5$ represents the possible values of $Y$, we can say
+Ordinal logistic regression models are expressed in terms of a logit function containing probabilities rather than a single variable.  In this case, where $Y$ is a random variable representing the calving ease score and $l=1,2,...,5$ represents the possible values of $Y$ in theory and $l=1,2,3$ in our dataset, $\frac{P(Y \leq l)}{P(Y > l)}$ is the cumulative probability of the easing score being less than or equal to level $l$ versus greater than $l$.  We can then write the model as
 
 $$
 \ln\left(\frac{P(Y \leq l)}{P(Y > l)}\right)=
-\alpha_l-\beta_{trt}X_{trt}-\beta_{sex}X_{sex}
+\alpha_l-\beta_{trt}X_{trt}-\beta_{sex}X_{sex}-\beta_{trt:sex}(X_{trt} \times X_{sex})
 $$
-![Equation for calving ease ordinal logistic regression model.]
 
-In the equation above the left side is the log-odds, which is the logit function mentioned previously.  On the right side of the equation $\alpha_l$ is the intercept of the model at the $l$th level, $X_{trt}$ and $X_{sex}$ represent the values for the third trimester treatment and the sex respectively, and the $\beta_i$ are slope values corresponding to the $i$th explanatory variable.
+In the equation above the left side is the log-odds or log of the cumulative probability, which is the logit function mentioned previously.  On the right side of the equation $\alpha_l$ is the intercept of the model at the $l$th level, $X_{trt}$ and $X_{sex}$ represent the values for the third trimester treatment and the sex respectively, and the $\beta_i$ are slope values corresponding to the $i$th explanatory variable with $\beta_{trt:sex}$ being the interaction effect.
 
-After fitting this model in R a significant difference between the DDG and CON was found.
+Some of the results of the model are displayed in @fig-OLS-Ease.  Note the model treats CON and heifer as the starting values for the treatment and sex respectively.  The first three rows of the coefficients table report the main effects for the other two treatments and steers.  `Calan.TreatmentDDG:SEXST` respresnts the interaction effect between the DDG treatment and steers, which is highly significant (p-value < 0.001).  The interaction bewtween the MET treatment and steers is not significant though (p-value = 0.149).  This means we can focus on the main effect for the MET treatment, but this is also not significant (p-value = 0.353).
 
-
-**Toma notes start here**
-**Model 1: OLR for Calving Ease**
-
-The ordinal logistic regression model for Calving.Ease reveals that the treatment DDG has a strong and significant negative effect compared to the reference treatment CON (p\<0.001), indicating lower odds of higher ease scores.
-In contrast, MET shows no significant effect compared to CON (p=0.354).
-The interaction between DDG and SEXSTR (Steer) is strongly significant (p\<0.001), suggesting that the impact of DDG depends on calf sex, while the interaction between MET and SEXSTR is not significant (p=0.149).
-The significant thresholds confirm that the ordinal levels of Calving.Ease are distinct.
-Overall, the model highlights significant effects for DDG and its interaction with calf sex, while other predictors do not show substantial influence.
 
 ```{r, , fig.pos="H"}
 #| label: fig-OLS-Ease
 #| echo: false
 #| eval: true
+#| fig-cap: "Coefficients table for ordinal logistic regression."
+
 
 data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
 
 ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
 
-summary(ease_model_3)
+#summary(ease_model_3)
 
-# Extract p-values
 coefs <- coef(summary(ease_model_3))
 p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
 coefs <- cbind(coefs, "p-value" = p_values)
-print(coefs)
+
+kable(coefs, 
+      digits = 3,  
+      format = "markdown")
 
 ```
 
-## WE NEED TO CUT OR SUMMARIZE THIS - Multinomial Logistic Regression for Calf Calving Ease
+The last two rows of @fig-OLS-Ease provide estimates for the interepts of the model.  For instance the row `1|2` means for $l<=1$ the model estimates $\alpha_1=1.735$ and for $l<=2$ we can say $\alpha_2=2.939$.  Both of these interecpts are significant as well.  
 
-The multinomial logistic regression model for Calving.Ease successfully converged, with a residual deviance of 58.42 and an AIC of 82.42, indicating moderate model fit.
-Extreme coefficients (e.g., −89.53 for Calan.TreatmentDDG) and large standard errors, especially for level 3, suggest data sparsity and instability in the estimates.
-Warnings for negative variance estimates point to multicollinearity or insufficient data for reliable interaction and treatment effect estimation.
-Post-hoc Tukey comparisons showed no significant differences between treatments (p=1.000), and missing standard errors (NaN) highlight issues with data variability.
-Overall, the model's results are unreliable due to data limitations, necessitating simplified modeling or alternative approaches.
+In summary of this model, we found a substantial difference between heifer calves from mothers on the CON treatment compared to steer calves with mothers on the DDG treatment as it relates to the easing score.  The DDG steer interaction effect had an estimated positive coeffienct, but in the context of the model this implies a decrease in the log-odds.  The MET treatment did not provide a statistically significant effect though.  We did revcieve and AIC of 79.95121 as well, which seemed decent to us.  (@OLR).
+
+In search of another model we considered a multinomial logistic regression.  We have concerns with this approach however since this approach is designed to model nominal data, which is categorical variables without an order.  (@Multi).  For that reason we chose to go in another direction.
+
+## MAYBE BINARY INSTEAD Binomial for Calving Ease
+
+**Need to check this**
+As previously discussed, the data for the calving ease score is highly skewed with most calves getting a score of one.  One way to reduce the effect of the skew could be to convert this to a binomial data set.  In this case we would have two categories for the calving ease score: low, which corresponds to scores of one, and high, which is everything else.  A type of model that fits binomial data like this is a binomial regression.  While this may not make a huge difference given that we have no scores larger than three, we want to see how this model compares to the last.
+
+For this model, we chose to use the same two explanatory variables.  That means the equation can be written just as it was in the ordinal logistic regression, with the exception of $l$ which now only has the levels *low* and *high*.
+
+
+The reason we can use the same function is that 
+
+we can express the function exaclty as we did for the ordinal logistic regression, since binomial regression uses the same 
+
 
 ```{r}
-library(nnet)
-ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
-summary(ease_model_4)
-
-# Fit multinomial logistic regression model
-library(nnet)
-# Perform pairwise comparisons using estimated marginal means
-emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
-pairs(emm_ease)
-
-```
-
-### Checking Assumption
-
-From VIF, Holding the assumptions for both model
-
-```{r}
-library(car)
-vif(ease_model_3)
-vif(ease_model_4)
-
-# Create a new dataset with predicted probabilities
-data2$predicted_probs <- predict(ease_model_3, type = "probs")
-
-
-library(ggplot2)
-ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
-  geom_point() +
-  geom_smooth(method = "loess", se = FALSE) +
-  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = OLR",
-       x = "Final Calf Body Weight",
-       y = "Predicted Probability")
-
-# Create a new dataset with predicted probabilities
-data2$predicted_probs <- predict(ease_model_4, type = "probs")
-
-# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
-library(ggplot2)
-ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
-  geom_point() +
-  geom_smooth(method = "loess", se = FALSE) +
-  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = MLR",
-       x = "Final Calf Body Weight",
-       y = "Predicted Probability")
-
-```
-
-
-## Binomial for Calving Ease
-
-```{r}
-data2$Calving.Ease <- factor(ifelse(data2$Calving.Ease == 3 | data2$Calving.Ease == 2, 2, 1), 
+data2$Calving.Ease.bin <- factor(ifelse(data2$Calving.Ease == 3 | data2$Calving.Ease == 2, 2, 1), 
                            levels = c(1, 2), 
                            labels = c("Low", "High"))
-binary_model_ease <- glm(Calving.Ease ~ Calan.Treatment + SEX, data = data2, family = binomial)
+binary_model_ease <- glm(Calving.Ease.bin ~ Calan.Treatment + SEX, data = data2, family = binomial)
 summary(binary_model_ease)
 ```
 ### Checking Assumption for Binomial
@@ -464,6 +418,7 @@ plot(residuals(binary_model_ease, type = "deviance"), main = "Deviance Residuals
 abline(h = 0, col = "red")
 
 ```
+
 
 
 
@@ -657,7 +612,11 @@ Tukey HSD and pairwise comparisons confirm no significant differences between tr
 The high residual variance (124841248412484) suggests unaccounted variability, indicating that additional predictors might improve the model.
 Overall, treatment effects are not significant, but sex remains an important factor influencing final body weight.
 
-```{r}
+```{r, , fig.pos="H"}
+#| label: fig-OLS-mixed
+#| echo: false
+#| eval: false
+
 library(lme4)
 weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
 summary(weight_model_6)
@@ -815,6 +774,64 @@ vigor_model_glm <- glm(Calf.Vigor.Binary ~ Calan.Treatment * SEX + Initial.BW,
 
 # Summarize the model
 summary(vigor_model_glm)
+
+```
+
+## WE NEED TO CUT OR SUMMARIZE THIS - Multinomial Logistic Regression for Calf Calving Ease
+
+The multinomial logistic regression model for Calving.Ease successfully converged, with a residual deviance of 58.42 and an AIC of 82.42, indicating moderate model fit.
+Extreme coefficients (e.g., −89.53 for Calan.TreatmentDDG) and large standard errors, especially for level 3, suggest data sparsity and instability in the estimates.
+Warnings for negative variance estimates point to multicollinearity or insufficient data for reliable interaction and treatment effect estimation.
+Post-hoc Tukey comparisons showed no significant differences between treatments (p=1.000), and missing standard errors (NaN) highlight issues with data variability.
+Overall, the model's results are unreliable due to data limitations, necessitating simplified modeling or alternative approaches.
+
+```{r}
+library(nnet)
+ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
+summary(ease_model_4)
+
+# Fit multinomial logistic regression model
+library(nnet)
+# Perform pairwise comparisons using estimated marginal means
+emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
+pairs(emm_ease)
+
+```
+
+
+
+### Checking Assumption
+
+From VIF, Holding the assumptions for both model
+
+```{r}
+library(car)
+vif(ease_model_3)
+vif(ease_model_4)
+
+# Create a new dataset with predicted probabilities
+data2$predicted_probs <- predict(ease_model_3, type = "probs")
+
+
+library(ggplot2)
+ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = OLR",
+       x = "Final Calf Body Weight",
+       y = "Predicted Probability")
+
+# Create a new dataset with predicted probabilities
+data2$predicted_probs <- predict(ease_model_4, type = "probs")
+
+# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
+library(ggplot2)
+ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = MLR",
+       x = "Final Calf Body Weight",
+       y = "Predicted Probability")
 
 ```
 
