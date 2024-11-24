@@ -379,7 +379,7 @@ In summary of this model, we found a substantial difference between heifer calve
 
 In search of another model we considered a multinomial logistic regression.  We have concerns with this approach however since this approach is designed to model nominal data, which is categorical variables without an order.  (@Multi).  For that reason we chose to go in another direction.
 
-## MAYBE BINARY INSTEAD Binomial for Calving Ease
+## Binomial for Calving Ease
 
 **Need to check this**
 As previously discussed, the data for the calving ease score is highly skewed with most calves getting a score of one.  One way to reduce the effect of the skew could be to convert this to a binomial data set.  In this case we would have two categories for the calving ease score: low, which corresponds to scores of one, and high, which is everything else.  A type of model that fits binomial data like this is a binomial regression.  While this may not make a huge difference given that we have no scores larger than three, we want to see how this model compares to the last.
