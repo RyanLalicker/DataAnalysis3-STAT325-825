@@ -21,7 +21,7 @@ editor:
     wrap: sentence
 ---
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: data-setup
 #| echo: false
 #| eval: true
@@ -48,7 +48,7 @@ data <- data %>%
 
 ```
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: Scratch-work-1
 #| echo: false
 #| eval: false
@@ -111,7 +111,7 @@ Given the number of missing values is this large, it is probably best to not use
 Some other variables, including the final body weight of the calf represented by `Final.Calf.BW`, are missing in 19 entries.
 Of the other four variables the client was most interested in, none have more than ten missing values.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-missing-data
 #| fig-cap: "Chart counting the number of missing values for each variable within the data."
 #| echo: false
@@ -166,10 +166,11 @@ Note, the original dataset did have three instances of a vigor score of four or 
 We can also see from the median and 75th percentiles that both seem very skewed towards the low end of the scale.
 While this is a good thing in terms of the health of the cows it could present some challenges for us later on.
 
-```{r, , fig.pos="H"}
+```{r, fig.pos="H"}
 #| label: fig-summary-stats
 #| echo: false
 #| eval: true
+#| fig-cap: "Summary statistics for dependent variables."
 
 dep_vars <- c("Calving.Ease", "Calf.Vigor", "Final.Calf.BW")
 
@@ -193,11 +194,11 @@ summary_table <- t(sapply(dep_vars, function(var) calc_stats(cleaned_data[[var]]
 
 summary_table <- as.data.frame(summary_table)
 
-kable(summary_table, col.names = c("Variable", "Mean", "Median", "SD", "25th Percentile", "75th Percentile", "Min", "Max"), 
-      caption = "Summary statistics for dependent variables")
+kable(summary_table, col.names = c("Variable", "Mean", "Median", "SD", "25th Percentile", "75th Percentile", "Min", "Max"))
 
 ```
 
+\newpage
 The final weight of calf is the third variable in @fig-summary-stats.
 The mean and median are relatively similar given the large standard deviation.
 While the previous two variables discussed give us some concerns about the skew, the final weight does not present the same issues.
@@ -209,7 +210,7 @@ The bin width for the histogram comes from the Freedman-Diaconis rule.
 The histogram appears to follow an approximately normal distribution.
 The Q-Q plot mostly follows this as most points follow the linear trend represented by the red line.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-normality
 #| echo: false
 #| eval: true
@@ -225,7 +226,7 @@ bin_width <- round(2*IQR(cleaned_data$Final.Calf.BW)/(length(cleaned_data$Final.
 
 ggplot(cleaned_data, aes(x = Final.Calf.BW)) +
   geom_histogram(binwidth = bin_width, color = "black", fill = "skyblue") +
-  labs( title = "Histogram of final calf weight",
+  labs(
     x = "Weight",
     y = "Frequency"
   ) +
@@ -234,7 +235,7 @@ ggplot(cleaned_data, aes(x = Final.Calf.BW)) +
 ggplot(cleaned_data, aes(sample = Final.Calf.BW)) +
   stat_qq() +
   stat_qq_line(color = "red") +
-  labs(title = "Q-Q plot of final calf weight",
+  labs(
     x = "Theoretical Quantiles",
     y = "Sample Quantiles"
   ) +
@@ -247,7 +248,7 @@ Before moving on we want to look at plots of the scoring variables as well.
 While we suspect a heavy skew for each, the histograms in @fig-scoring-dist verify this.
 It is important to remember that these two variables are not continuous like the weight variable, so the types of models used will vary.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-scoring-dist
 #| echo: false
 #| eval: true
@@ -262,7 +263,7 @@ It is important to remember that these two variables are not continuous like the
 
 ggplot(cleaned_data, aes(x = Calving.Ease)) +
   geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
-  labs(title = "Histogram of calving ease",
+  labs(
     x = "Ease Score",
     y = "Frequency"
   )+
@@ -270,7 +271,7 @@ ggplot(cleaned_data, aes(x = Calving.Ease)) +
 
 ggplot(cleaned_data, aes(x = Calf.Vigor)) +
   geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
-  labs(title = "Histogram of calf vigor",
+  labs(
     x = "Vigor Score",
     y = "Frequency"
   ) +
@@ -288,7 +289,7 @@ Note HFR stands for heifer and STR stands for steer.
 Although not every group has an equivalent number of subjects, this is nothing we are concerned about.
 Please note that the total occurrences per treatment are different than discussed above since rows containing missing values were removed.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-table
 #| echo: false
 #| eval: true
@@ -311,7 +312,7 @@ The p-value (0.40811) suggests that there is no statistically significant associ
 While this result indicates that these variables are not strongly associated, it does not directly address multicollinearity, which is better assessed using metrics like Variance Inflation Factor (VIF) or condition indices in regression models.
 Therefore, we will do further diagnostic checks for the model, such as calculating VIF values, to ensure multicollinearity is not an issue in the model.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-chi
 #| echo: false
 #| eval: true
@@ -337,17 +338,17 @@ We can see the steers are heavier on average than the heifers.
 The treatments seem to different variances as well, but their median values are not different by huge quantities.
 Both the CON and MET treatments had one steer large enough to be an outlier, while the DDG treatment had several outliers for both sexes.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-box-1
 #| echo: false
 #| eval: true
-#| fig-cap: "Boxplot of final Calf body weight by treatment and sex."
-#| fig-width: 6
-#| fig-height: 4
+#| fig-cap: "Boxplot of final calf body weight by treatment and sex."
+#| fig-width: 5
+#| fig-height: 3
 
 ggplot(data2, aes(x = Calan.Treatment, y = Final.Calf.BW, fill = SEX)) +
   geom_boxplot(outlier.color = "red", alpha = 0.7) +
-  labs(title = "Boxplot of Final Calf Body Weight by Treatment and Sex",x = "Treatment", y = "Final Body Weight") +
+  labs(x = "Treatment", y = "Final Body Weight") +
   theme_minimal()
 
 ```
@@ -356,7 +357,7 @@ Another variable we want to investigate graphically is the initial weight of the
 In @fig-bodyweight-scatter we can see this while also accounting for both the third trimester treatment with the shape of the data point and the sex of the calf with the color of the data point.
 This allows us to see, how the effect of the heifer's initial weight has, but also the trends of both treatment and sex.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-bodyweight-scatter
 #| echo: false
 #| eval: true
@@ -421,7 +422,7 @@ The first three rows of the coefficients table report the main effects of the ot
 The interaction between the MET treatment and steers is not significant, though (p-value = 0.149).
 Overall, the model highlights significant effects for DDG and its interaction with calf sex, while other predictors do not show substantial influence.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-OLS-Ease
 #| echo: false
 #| eval: true
@@ -432,8 +433,6 @@ library(MASS)
 data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
 
 ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
-
-summary(ease_model_3)
 
 coefs <- coef(summary(ease_model_3))
 p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
@@ -448,33 +447,39 @@ kable(coefs,
 
 The last two rows of @fig-OLS-Ease provide estimates for the model's interests.
 For instance the row `1|2` means for $l<=1$ the model estimates $\alpha_1=1.735$ and for $l<=2$ we can say $\alpha_2=2.939$.
-Both of these intercepts are significant as well.
+Both of these intercepts are significant as well.  (@OLR).
 
 In summary of this model, we found a substantial difference between heifer calves from mothers on the CON treatment compared to steer calves with mothers on the DDG treatment as it relates to the easing score.
 The DDG steer interaction effect had an estimated positive coefficient, but in the context of the model, this implies a decrease in the log odds.
 However, the MET treatment did not have a statistically significant effect.
 
-The Residual Deviance value of 65.95121 measures the goodness of fit for the model, where lower values indicate a better match between the observed and predicted data.
-The Akaike Information Criterion (AIC) of 79.95121 evaluates the trade-off between the model's fit and complexity, with smaller AIC values indicating a more efficient model.We'll compare this AIC value with other models later.
-(@OLR).
+Further output can be found in *Appendix D - Additional R Output*.  From this output we can say the Residual Deviance has a value of 65.95121.  This measures the goodness of fit for the model, where lower values indicate a better match between the observed and predicted data.
+The Akaike Information Criterion (AIC) of 79.95121 evaluates the trade-off between the model's fit and complexity, with smaller AIC values indicating a more efficient model. 
+
 
 ## Multinomial Logistic Regression (MLR)
 
-In search of another model, we considered a multinomial logistic regression.
+In search of another model, we considered a multinomial logistic regression.  The model predicts Calving Ease based on third trimester treatment, sex of the calf, and their interaction.
+The model converged successfully after several iterations, with a residual deviance of 58.418 and an AIC of 82.418. It is indicating this may not be a good choice for the final the model.
+The coefficients, as seen in output below,  represent the log-odds of the calving ease levels relative to a reference category, but the large standard errors for interaction terms suggest potential numerical instability or sparse data for some levels.
 
-The multinomial logistic regression model predicts Calving Ease based on Calan.Treatment, SEX, and their interaction.
-The model converged successfully after several iterations, with a residual deviance of 58.418 and an AIC of 82.418 (Whice is larger than OLR Model).It's indicating MLR is not a good choice for fitting the model.
-Coefficients represent the log-odds of the calving ease levels relative to a reference category, but the large standard errors for interaction terms suggest potential numerical instability or sparse data for some levels.
 
-Another important thing is that the Multinomial logistic regression is designed to model nominal data, which is categorical data without an order.
-We could still choice this Model for our ordinal variable (Calving Ease), if it would be better fitting than OLR Model (@Multi).
-For these reasons, we chose to go in another direction and not recommend this model.
+```{r,  fig.pos="H"}
+#| label: fig-MLR-Ease
+#| echo: false
+#| eval: true
+#| fig-cap: "Multinomial logistic regression output."
 
-```{r}
 library(nnet)
 ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
 summary(ease_model_4)
+
 ```
+
+Another important thing is that multinomial logistic regression is designed to model nominal data, which is categorical data without an order.  (@Multi).
+We could still choose this Model for our ordinal variable if it would be better fitting than OLR Model.
+For these reasons, we chose to go in another direction and not recommend this model.
+
 
 ## Binomial Regression
 
@@ -492,7 +497,9 @@ Thus we can write the model as,
 
 $$
 \ln \left( \frac{\pi}{1-\pi} \right) = \beta_0 + \beta_1 X_{trt} + \beta_2 X_{sex}+\beta_3(X_{trt} \times X_{sex})
-$$ where $\beta_0$ is the intercept of the model and $\beta_1$, $\beta_2$ and $\beta_3$ are the coefficients for $X_{trt}$, $X_{sex}$, and their interaction respectively.
+$$ 
+
+where $\beta_0$ is the intercept of the model and $\beta_1$, $\beta_2$ and $\beta_3$ are the coefficients for $X_{trt}$, $X_{sex}$, and their interaction respectively.
 (@bino).
 For this model MET is considered to be the default treatment, while steer is the default sex.
 
@@ -510,42 +517,60 @@ While the lack of significant terms seems detrimental, the AIC of the model is 6
 However, we cannot compare this value to the AIC of the ordinal logistic model since they are different types of models.
 (@aic).
 This is backed up by the percent concordance (63.9%) and Somers' D (0.440), which suggest moderate predictive performance.
-Later the odds ratio plot visually confirms the lack of significant associations for the predictors and their interactions.
+Below, the odds ratio plot visually confirms the lack of significant associations for the predictors and their interactions.
 
-![*Plot for Odds Ratio*](Bin.eas-4.png)
+![Plot for odds ratio.](Bin.eas-4.png)
 
-```{r}
+The plots below in @fig-bin-Ease help evaluate the assumptions of a binomial regression model.  The Cook's Distance plot shows that most observations have minimal influence on the model, with no Cook's distances exceeding common thresholds (e.g., 0.5), indicating no highly influential data points.
+The Deviance Residuals plot demonstrates that most residuals are centered near zero, reflecting a generally good model fit, but a few residuals exceed ±2, which may indicate potential outliers or areas of poor model performance.
+
+```{r,  fig.pos="H"}
+#| label: fig-bin-Ease
+#| echo: false
+#| eval: true
+#| fig-cap: "Graphs to test assumptions."
+#| layout-ncol: 2
+#| fig-subcap: 
+#|  - "Cook's Distance"
+#|  - "Deviance Residuals"
+
 data2$Calving.Ease.bin <- factor(ifelse(data2$Calving.Ease == 3 | data2$Calving.Ease == 2, 2, 1), 
                            levels = c(1, 2), 
                            labels = c("Low", "High"))
 binary_model_ease <- glm(Calving.Ease.bin ~ Calan.Treatment * SEX, data = data2, family = binomial)
-summary(binary_model_ease)
-```
-
-### Checking Assumption for Binomial
-
-The Cook's Distance plot shows that most observations have minimal influence on the model, with no Cook's distances exceeding common thresholds (e.g., 0.5), indicating no highly influential data points.
-The Deviance Residuals plot demonstrates that most residuals are centered near zero, reflecting a generally good model fit, but a few residuals exceed ±2, which may indicate potential outliers or areas of poor model performance.
-The Variance Inflation Factor (VIF) analysis highlights severe multicollinearity for Calan.Treatment (GVIF = 50.03) and its interaction with SEX (GVIF = 58.34), suggesting strong redundancy among these predictors.
-In contrast, the VIF for SEX (1.68) indicates no significant multicollinearity for this variable alone.
-Overall, while the model does not appear to have issues with influential points, the presence of multicollinearity among predictors could complicate interpretation and may necessitate further investigation or variable transformation.
-
-```{r}
 
 # 3. Influential observations (Cook's Distance)
 influence <- cooks.distance(binary_model_ease)
-plot(influence, type = "h", main = "Cook's Distance")
+plot(influence, type = "h")
 abline(h = 4 / nrow(data2), col = "red")  # Threshold for influential points
 
 
 # 5. Residual analysis (deviance residuals)
-plot(residuals(binary_model_ease, type = "deviance"), main = "Deviance Residuals")
+plot(residuals(binary_model_ease, type = "deviance"))
 abline(h = 0, col = "red")
+```
 
-# 2. Multicollinearity
+
+The Variance Inflation Factor (VIF) analysis highlights severe multicollinearity for Calan.Treatment (adjusted GVIF = 50.03) and its interaction with SEX (adjusted GVIF = 58.34), suggesting strong redundancy among these predictors.  This appears to be a direct contradiction with @fig-chi.  Due to time constraints we were not able to invesigate this further though.
+
+In contrast, the adjusted GVIF for SEX (1.68) indicates no significant multicollinearity for this variable alone.
+Overall, while the model does not appear to have issues with influential points, the presence of multicollinearity among predictors could complicate interpretation and may necessitate further investigation or variable transformation.
+
+
+
+```{r,  fig.pos="H"}
+#| label: fig-MLR-Ease-2
+#| echo: false
+#| eval: true
+#| fig-cap: "VIF table"
+
 library(car)
-vif(binary_model_ease)  # Variance Inflation Factor
-
+#vif(binary_model_ease)
+vif_values <- vif(binary_model_ease)
+vif_df <- as.data.frame(vif_values)
+vif_df <- cbind(Variable = rownames(vif_df), vif_df)
+rownames(vif_df) <- NULL
+kable(vif_df)
 ```
 
 ## Conclusion for Calving Ease Score
@@ -554,7 +579,7 @@ We previously discussed three models for the calving ease score.
 As we already indicated, the multinomial logistic regression is not the direction we would recommend.
 Regarding to the other two, model preference depends on the cleint's desired goal.
 If these models are intended for purely predictive purposes, the binomial regression model may be effective.
-However, if the client wants to study the impact the third-trimester treatment and the sex of the calf had on the ease score, then we strongly recommend the ordinal logistic regression model over the other models discussed.
+However, if the client wants to study the impact the third-trimester treatment and the sex of the calf had on the ease score, then we strongly recommend the ordinal logistic regression model over the other models discussed.  Additionally the multicolinearity assumption was not found in the ordinal logistic regression model, but further invesitgration should be done.
 
 # Models for Calf Vigor Score
 
@@ -579,7 +604,7 @@ In @fig-OLS-Vigor we can see the interaction terms are non-significant.
 The same can be said for the main effects meaning only the intercepts, $\alpha_l$, are significant.
 This indicates neither of the explanatory variables seems to have much of an effect on the vigor score.
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: fig-OLS-Vigor
 #| echo: false
 #| eval: true
@@ -588,8 +613,6 @@ This indicates neither of the explanatory variables seems to have much of an eff
 data2$Calf.Vigor <- factor(data2$Calf.Vigor, ordered = TRUE)
 
 vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
-
-#summary(vigor_model_1)
 
 # Extract p-values
 coefs <- coef(summary(vigor_model_1))
@@ -607,6 +630,7 @@ This is not bad on its own and indicates the model fits decently.
 However, the issues regarding significance make us skeptical of the model's predictive capability.
 It may indicate that the two explanatory variables just do not significantly impact the vigor score.
 We will want to test other models before arriving at that conclusion, though.
+Note, the full model output can be found in *Appendix D - Additional R Output*.
 
 ## Binomial Regression
 
@@ -629,26 +653,43 @@ Again though, the *Model Fit Statistics* table has a decent AIC store, so the mo
 
 More of the SAS output, including odds ratios and plot can be found in *Appendix C - Additional SAS Output*.
 
-```{r}
+As with the previous binomial regression model, we need to check the assumptions of the binomial regression.  The adjusted GVIF values in @fig-MLR-Vigor-2 for all predictors and their interaction are below 5, implying no significant multicollinearity in the model.
+
+```{r,  fig.pos="H"}
+#| label: fig-MLR-Vigor-2
+#| echo: false
+#| eval: true
+#| fig-cap: "VIF table"
+
+library(car)
+
 data2$Calf.Vigor <- factor(ifelse(data2$Calf.Vigor == 3 | data2$Calf.Vigor == 2, 2, 1), 
                            levels = c(1, 2), 
                            labels = c("Low", "High"))
 binary_model1 <- glm(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, family = binomial)
-summary(binary_model1)
 
+
+vif_values <- vif(binary_model1)
+vif_df <- as.data.frame(vif_values)
+vif_df <- cbind(Variable = rownames(vif_df), vif_df)
+rownames(vif_df) <- NULL
+kable(vif_df)
 ```
 
-## Checking Assumption for Calf Vigor
 
-The Variance Inflation Factor (VIF) values for all predictors and their interaction are below 5, implying no significant multicollinearity in the model.
-The adjusted GVIF values for the interaction term (1.71), Calan.Treatment (1.42), and SEX (1.74) confirm that the predictors do not distort coefficient estimates due to collinearity.The Cook's Distance plot indicates that all observations have minimal influence on the model, with no notable outliers or highly influential points.
+In @fig-bin-VIgor-1 we can see the Cook's Distance plot indicates that all observations have minimal influence on the model, with no notable outliers or highly influential points.
 The Deviance Residuals plot shows residuals tightly clustered around zero, suggesting an excellent model fit, though the lack of variability might indicate overfitting or an overly simplistic model specification.
 Overall, the diagnostics support the validity of the model, but the small deviance residuals may require further investigation to ensure appropriate model fit.
 
-```{r}
-# 2. Multicollinearity
-library(car)
-vif(binary_model1)  # Variance Inflation Factor
+```{r,  fig.pos="H"}
+#| label: fig-bin-VIgor-1
+#| echo: false
+#| eval: true
+#| fig-cap: "Graphs to test assumptions."
+#| layout-ncol: 2
+#| fig-subcap: 
+#|  - "Cook's Distance"
+#|  - "Deviance Residuals"
 
 # 3. Influential observations (Cook's Distance)
 influence <- cooks.distance(binary_model1)
@@ -664,8 +705,8 @@ abline(h = 0, col = "red")
 
 ## Conclusion for Calf Vigor Score
 
-The two models discussed above both had a similar conclusion, which is the vigor score was not significantly affected by either the third trimester treatment, the cal's sex, or their interaction.
-Therefore recommendation a model for this dataset will again depend on Client's goal.
+The two models discussed above both had a similar conclusion, which is the vigor score was not significantly affected by either the third trimester treatment, the calf's sex, or their interaction.
+Therefore recommending a model for this dataset will again depend on Client's goal.
 However, both models could still have some predictive value, which could be evaluated at a later date.
 
 Note that we did fit a multinomial logistic regression model for the vigor score as well, but we ran into the same issues as before so no results are shown for the model in this paper.
@@ -694,9 +735,7 @@ Therefore we can procede with our mixed model.
 
 ![Plots to check residual assumption.](mix.res.png)
 
-The *Covariance Parameter Estimates* table shows how the sire effect
-
-From the *Fit Statistics* table below shows the model has an AIC of 1193.1.
+The *Fit Statistics* table below shows the model has an AIC of 1193.1.
 While this is not great, it is not far off from other models we have viewed in other data analyses.
 Also, the sire effect on the covariance structure is shown in the *Covariance Parameter Estimates* table.
 
@@ -723,86 +762,80 @@ $$
 Y_{ijk} = \mu + \alpha_i + \beta_j + (\alpha \beta)_{ij} + \gamma X_k + e_{ijk}
 $$
 
-where $Y_{ijk}$ represents the final Calf Body weight for the $ith$ treatment, the $j$th sex, and the $k$th initial.BW.
+where $Y_{ijk}$ represents the final calf body weight for the $ith$ treatment, the $j$th sex, and the $k$th initial.BW.
 $\mu$ represents the overall mean, while $\alpha_i$ is the fixed effect for the $ith$ treatment, $\beta_j$ is the fixed effect for the $j$th sex, and $(\alpha \beta)_{ij}$ is their interaction.
-$$\gamma X_k $$ is Covariate effect of initial body weight where $$\gamma$$ is the slope.We assume the residual error term $e_{ijkl}$ is distributed as $~N(0,\sigma^2)$.
+$\gamma X_k $ is covariate effect of initial body weight where $\gamma$ is the slope. We assume the residual error term $e_{ijkl}$ is distributed as $~N(0,\sigma^2)$.
 
-This ANCOVA model adjusts the response variable $Y{ijk}$ (final calf body weight) for the covariate initial body weight $X_k$ while modeling the main effects of treatment $\alpha_i$ , sex $\beta_j$ , and their interaction $(\alpha \beta)_{ij}$.
+This ANCOVA model adjusts the response variable $Y{ijk}$ (final calf body weight) for the covariate initial body weight $X_k$ while modeling the main effects of treatment ($\alpha_i$), sex ($\beta_j$), and their interaction ($(\alpha \beta)_{ij}$).
 The residual errors are assumed to be normally distributed with constant variance.
 
-Now, we can view the output of this model after it was fit in SAS.
+Now, we can view the output of this model after it was fit in SAS.  The ANCOVA model for the final body weight (Final_Calf_BW) is significant overall, with an F-value of 5.72 and a p-value \< 0.0001, indicating that the predictors collectively explain a significant portion of the variability in final calf body weight.
+The R-Square value of 0.267 shows that 26.7% of the variability in Final_Calf_BW is accounted for by the model.
 
 ![*Model information along with Type I and Type III test results.*](an.1.png)
 
-The ANCOVA model for Final_Calf_BW is significant overall, with an F-value of 5.72 and a p-value \< 0.0001, indicating that the predictors collectively explain a significant portion of the variability in final calf body weight.
-The R-Square value of 0.267 shows that 26.7% of the variability in Final_Calf_BW is accounted for by the model.
-Among individual predictors, Calan.Treatment (p=0.5922), SEX (p=0.6701), and their interaction (p=0.7179) are not statistically significant, suggesting they do not contribute meaningfully to explaining Final_Calf_BW.
-However, Initial BW is a significant predictor (p=0.0022), highlighting its importance in determining final body weight.
-This emphasizes that initial body weight is a key variable driving differences in Final_Calf_BW, while treatment and sex effects appear negligible.
+The final table in the figure below shows the Type 3 sums of squares.  Here we can see the treatment by sex interaction is insignificant.  In terms of main effects, sex (p-value < 0.0001) and the initial body weight of the mother (p-value = 0.0022) are significant, but the treatment is insignificant.  This emphasizes that the sex of the calf and mother's initial body weight are key variables driving differences in the final weight of the calf, while treatment appears negligible.
+
+
 
 ![*ANCOVA Plot-1*](an.2.png)
 
-This ANCOVA plot examines the relationship between Initial Body Weight (Initial BW) and Final Calf Body Weight (Final_Calf_BW) for combinations of Calan.Treatment and SEX.
+This ANCOVA plot examines the relationship between Initial Body Weight (Initial BW) and Final Calf Body Weight (Final_Calf_BW) for combinations of the treatment (Calan.Treatment) and SEX.
 Each line represents a fitted regression line, showing how Initial BW influences Final_Calf_BW for each group.
 The generally parallel nature of the lines indicates no significant interaction between Calan.Treatment and SEX, as the slopes are similar across groups.
 The positive slopes demonstrate that Initial BW is a strong predictor of Final_Calf_BW, with higher initial weights leading to higher final weights.
 There is some variability within each group, as shown by the scatter of points around the lines, but overall, Initial BW appears to adjust group differences effectively.
 
-![\* Tukey-Kramer adjustments plot\*](an.5.png)
+![Tukey-Kramer adjustments plot](an.5.png)
 
 The plot displays pairwise comparisons of Final_Calf_BW across treatment and sex combinations, using Tukey-Kramer adjustments for multiple comparisons.
 Red lines represent comparisons where the differences between groups are not statistically significant, while blue lines indicate significant differences at the 0.05 level.
 The majority of comparisons are not significant, as evidenced by the predominance of red lines.
 However, some significant differences are noted, such as between MET STR and CON HFR. Overall, the visualization demonstrates that while certain treatment-sex combinations show significant differences, the interaction effect between treatment and sex does not exhibit a strong pattern of significance, supporting the earlier conclusion of non-significant interaction effects.
 
-### Checking Assumptions
+We also need to check the assumptions of the ANCOVA model.  This scatter plot below of residuals against predicted values checks for homoscedasticity (constant variance of residuals).
+The residuals are scattered relatively evenly around the zero line, showing no clear pattern or trend, which supports the assumption of homoscedasticity.
 
 ![*Residuals vs Predicted Plot*](an.res-1.png)
-
-This scatter plot of residuals against predicted values checks for homoscedasticity (constant variance of residuals).
-The residuals are scattered relatively evenly around the zero line, showing no clear pattern or trend, which supports the assumption of homoscedasticity.
-However, there are a few residuals at the extremes that may warrant closer inspection for influential data points.
-
-![*Univariate Statistics and Tests for Residuals*](an.res-2.png)
-
-The univariate statistics for residuals indicate that the mean is 0, with small skewness (0.31) and kurtosis (0.88), suggesting no systematic bias and approximate normality in the residuals.
-Tests for location (e.g., t-test, Sign test) confirm that the mean residual is not significantly different from 0, as all p-values exceed 0.05.
-Additionally, normality tests (Shapiro-Wilk, Kolmogorov-Smirnov, etc.) also yield p-values greater than 0.05, further supporting the assumption of normally distributed residuals.
-
-![Histogram](an.res-3.png) 
 
 The histogram shows the distribution of residuals, which appears approximately symmetric and bell-shaped.
 The overlaid normal curve aligns well with the histogram, further supporting the assumption of normality.
 
-![*Q-Q Plot*](an.res-4.png) 
+![Histogram](an.res-3.png) 
 
-Most points lie close to the diagonal line, indicating normality.
+For the Q-Q plot, most points lie close to the diagonal line, indicating normality.
 However, slight deviations at the tails suggest minor departures from normality, but these are not severe enough to invalidate the model assumptions.
+
+![*Q-Q Plot*](an.res-4.png) 
 
 The diagnostic plots and tests collectively support that the assumptions of homoscedasticity, normality, and zero-mean residuals are reasonably met.
 While minor deviations are observed, they are unlikely to significantly impact the validity of the model.
 
-# Summary
+## Conclusion for Final Calf Body Weight
 
-Add if you have any! Otherwise delete this section
+From the results of both models we can say the sex of the calf had a significant impact on the final body weight of the calf.  There was not a significant result for the third trimester treatment effects though.  This indicates the treatments did not have a meaningful effect on the final body weight.  Between the two models, we found the the ANCOVA model offered clear and interpretable results, making it our recommended approach for future studies.
 
-# Recommendation
+It is important to note that in the ANCOVA model, the initial body weight of the mother was deemed significant.  In the future including more models that account for this variable and others within the data set may give cattle producers a better idea of how to maximize the weight of their calves before slaughter.
 
-The analysis identified Initial_BW as the most significant predictor of Final_Calf_BW, emphasizing the importance of optimizing maternal nutrition during pregnancy to improve calf growth outcomes. Dietary treatments (CON, DDG, MET) showed no significant effect on Final_Calf_BW, suggesting a need to revisit their formulation or timing if they are to make a meaningful impact. Sex differences were significant, with males (steers) outperforming females (heifers), indicating the potential for tailored management practices to enhance growth. Sire effects explained minimal variability and may not need inclusion in future models unless biologically justified. The ANCOVA model offered clear and interpretable results, making it a recommended approach for future studies, while also suggesting further trials with revised treatments and additional predictors to better understand growth variability.
+
+# Future Work
+
+This dataset contained many missing values.  We ended up performing our analysis on only 84.17% of the original data.  Repeating our analysis methods with imputed data would allow for more of the data to be used and may lead to slightly different results.  While we previously explained why we did not impute this dataset, seeing if the results of the models differed would be interesting.
+
+Additionally, future analysis of this data should attempt to control for more variables in the models.  In our final model, the ANCOVA model for the final body weight of the calves, we found information about the mother heifer, her body weight, had a significant impact on the model.  We were unable to apply this variable and others to additional models due to time constraints, but would recommend this to anyone working on this data in the future.
 
 \newpage
 
 # References
 
 ::: {#refs}
-https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/ https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/statug/statug_logistic_examples03.htm https://web.pdx.edu/\~newsomj/mvclass/ho_ancova%20example.pdf https://pmc.ncbi.nlm.nih.gov/articles/PMC7475459/
 :::
 
 \newpage
 
 # Appendix A - R Code
 
-```{r, , fig.pos="H"}
+```{r,  fig.pos="H"}
 #| label: appendix A
 #| echo: true
 #| eval: false
@@ -949,8 +982,6 @@ data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
 ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, 
                      data = data2, Hess = TRUE)
 
-#summary(ease_model_3)
-
 coefs <- coef(summary(ease_model_3))
 p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  
 coefs <- cbind(coefs, "p-value" = p_values)
@@ -961,8 +992,8 @@ kable(coefs,
 
 data2$Calf.Vigor <- factor(data2$Calf.Vigor, ordered = TRUE)
 
-vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
-
+vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, 
+                      data = data2, Hess = TRUE)
 summary(vigor_model_1)
 
 coefs <- coef(summary(vigor_model_1))
@@ -1032,7 +1063,8 @@ run;
 /*Mixed Model*/
 data data;
     set data;
-    if not missing('Final.Calf.BW'n) then Final_Calf_BW = input('Final.Calf.BW'n, best12.);
+    if not missing('Final.Calf.BW'n) then Final_Calf_BW = 
+    input('Final.Calf.BW'n, best12.);
 run;
 
 proc mixed data=data method=reml plots=residualpanel;
@@ -1091,3 +1123,40 @@ run;
 ## ANCOVA for Calf Final Body Weight
 
 ![Tukey's HSD test and comparisons for ANCOVA model.](an.4.png)
+
+
+\newpage
+
+# Appendix D - Additional R Output
+
+## Ordinal Logistic Regression for Easing
+
+```{r}
+
+summary(ease_model_3)
+
+```
+
+## Binomial regression for Easing
+
+```{r}
+
+summary(binary_model_ease)
+```
+
+
+## Ordinal Logistic Regression for Vigor
+
+```{r}
+
+summary(vigor_model_1)
+
+```
+
+## Binomial regression for Vigor
+
+```{r}
+
+summary(binary_model1)
+
+```
