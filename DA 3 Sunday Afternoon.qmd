@@ -387,7 +387,7 @@ In both plots, we can see the initial weight of the mother heifer does not seem 
 It would appear that being heavier or lighter than average had little to no effect on getting a score other than one.
 While this variable may be used in models later to test its significance more formally, we have doubts about its effect on either score variable.
 
-# Models for Calving Ease
+# Models for Calving Ease Score
 
 ## Ordinal Logistic Regression Model
 
@@ -453,19 +453,6 @@ The MET treatment did not provide a statistically significant effect though.
 We did revcieve and AIC of 79.95121 as well, which seemed decent to us.
 (@OLR).
 
-```{r, , fig.pos="H"}
-#| label: fig-OLS-Ease-Pairwise
-#| echo: false
-#| eval: true
-#| fig-cap: "Pairwise comparisons for ordinal logistic regression."
-
-emmeans_result <- emmeans(ease_model_3, ~ Calan.Treatment * SEX)
-pairwise_comparisons <- contrast(emmeans_result, method = "pairwise")
-pairwise_treatment <- emmeans(ease_model_3, pairwise ~ Calan.Treatment | SEX)
-pairwise_comparisons <- contrast(emmeans_result, method = "pairwise", adjust = "bonferroni")
-pairwise_df <- as.data.frame(summary(pairwise_comparisons))
-kable(pairwise_df)
-```
 
 ## Multinomial Logistic Regression
 
@@ -500,13 +487,12 @@ Elsewhere in the output, which can be seen in *Appendix C - Additional SAS Outpu
 
 While the lack of significant terms seems detrimental, the AIC of the model is 66.599, indicating a decent fit.  However, we cannot compare this value to the AIC of the ordinal logistic model since they are different types of models. (@aic).  This is backed up by the percent concordance (63.9%) and Somers’ D (0.440), which suggest moderate predictive performance.
 
-## Recommended Model for Calving Ease
+## Recommended Model/Conclusion for Calving Ease Score
 
 We previously discussed three models for the calving ease score.  As we already indicated, the multinomial logistic regression is not the direction we would recommend.  In regards to the other two, model preference depends on the cleint's desired goal.  If these models are intended for purely predictive purposes, the binomial regression model may be effective.  However, if the client wants to study the impact the third trimester treatment and sex of the calf had on the ease score then we strongly recommend the ordinal logistic regression model over the other models discussed.
 
-By using the ordinal logistic regression model
 
-# Models for Calf Vigor
+# Models for Calf Vigor Score
 
 ## Ordinal Logistic Regression Model
 
@@ -556,80 +542,50 @@ $$
 \ln \left( \frac{\pi}{1-\pi} \right) = \beta_0 + \beta_1 X_{trt} + \beta_2 X_{sex}+\beta_3(X_{trt} \times X_{sex})
 $$
 
-Once again though, 
+Once again, the *Analysis of Maximum Likelihood Estimates* table below indicates no significant interactions or main effects, outside of the intercept.  Again though, the *Model Fit Statistics* table has a decent AIC store, so the model may still have predictive qualities despite showing no significant relationships among our explanatory variables.
 
 ![*Analysis of Maximum Likelihood Estimates* table.](Bin.vig-2.png)
 
-![Fig-1](Bin.vig-1.png)
+More of the SAS output, including the reported fit statistics, joint tests, and odds ratios can be found in *Appendix C - Additional SAS Output*.  
 
+## Recommended Model/Conclusion for Calf Vigor Score
 
-
-![Fig-1](Bin.vig-3.png)
-
-![Fig-1](Bin.vig-4.png)
-
-## Recommended Model for Calf Vigor
-
-**PICK ONE**
+The two models discussed above both had a similar conclusion, which is the vigor score was not significantly affected by either the third trimester treatment, the cal's sex, or their interaction.  Therefore we cannot recommend a model for this dataset.  However, both models could still have some predictive value, which could be evaluated at a later date.
 
 Note we did fit a multinomial logistic regression model for the vigor score as well, but we ran into the same issues as before so no results are shown for the model in this paper.
 
 
 
-# Models for Final Calf Weight
+# Models for Final Calf Body Weight
 
 ## Mixed Model
 
-Now we will look at models for investigating the effect the clients chosen explanatory variables have on the final body weight of the calf.  Since the body weight is a quantitative variable, we can turn to linear models.  We initially attempted to fit a simple model using only the third trimester treatment and sex of the calf, but ultimately chose to include the pen number and the sire of the calf as additional explanatory variables.  This slightly complicates the model as we believe the additional variables are better represented as random effects, meaning we are working with a mixed model.
+Now we will look at models for investigating the effect the clients chosen explanatory variables have on the final body weight of the calf.  Since the body weight is a quantitative variable, we can turn to linear models.  We initially attempted to fit a simple model using only the third trimester treatment and sex of the calf, but ultimately chose to include the sire of the calf as an additional explanatory variable.  This slightly complicates the model as we believe the additional variable is better represented as a random effect, meaning we are working with a mixed model.
 
 The purposed model and be represented as
 $$
-Y_{ijkl} = \mu + \alpha_i + \beta_j + (\alpha \beta)_{ij}+u_k+v_l+e_{ijkl}
+Y_{ijk} = \mu + \alpha_i + \beta_j + (\alpha \beta)_{ij}+u_k+e_{ijk}
 $$
-where $Y_{ijkl}$ represents the final weight for the $ith$ treatment,the $j$th sex, the $k$th pen, and the $l$th sire.  $\mu$ represents the overall mean, while $\alpha_i$ is the fixed effect for the $ith$ treatment, $\beta_j$ is the fixed effect for the $j$th sex, and $(\alpha \beta)_{ij}$ is their interaction.  For random effects the pen effect is represented by $u_k$ while the sire effect is shown by $v_l$.  We assume $u_k~N(0,\sigma_k^2)$, $v_l~N(0,\sigma_l^2)$, and the residual term $e_{ijkl}~N(0,\sigma^2)$.
+where $Y_{ijk}$ represents the final weight for the $ith$ treatment,the $j$th sex, and the $k$th sire.  $\mu$ represents the overall mean, while $\alpha_i$ is the fixed effect for the $ith$ treatment, $\beta_j$ is the fixed effect for the $j$th sex, and $(\alpha \beta)_{ij}$ is their interaction.  The random sire effect is represented by $u_k$ and we assume $u_k~N(0,\sigma_k^2)$.  We also assume the residual term $e_{ijkl}$ is distributed as $~N(0,\sigma^2)$.
+
 
 For a linear mixed model to work, the assumption regarding the distribution of the residuals must hold.  These can be checked graphically in the conditional residual plots below.  The histogram and Q-Q plot show if the residuals are approximately normal while the plot in the top left evaluates any multicollinearity concerns.  Thankfully the graphs give us no concerns as no trends are present in the top-left plot and the residuals are randomly distributed around zero, the histogram appears bell shaped around zero, and the Q-Q plot sees most points fall along the line, which is ideal.  Therefore we can procede with our mixed model.
 
 ![Plots to check residual assumption.](mix.res.png)
 
+The *Covariance Parameter Estimates* table shows how the sire effect 
+
+From the *Fit Statistics* table below shows the model has an AIC of 1193.1.  While this is not great, it is not far off from other models we have viewed in other data analyses.  Also, the sire effect on the covariance structure is shown in the *Covariance Parameter Estimates* table.
+
+![Covariance parameter, fit statistics, fixed effects and least quares means tables](mix.1.png)
+
+The *Type 3 Fixed Effects* table tells us what fixed effects, if any, are statistically significant.  As we have done when viewing other models in this paper, we must first look at the interaction effect, which is insignificant.  Therefore, we turn to the main effects of the two explanatory variables.  While the sex of the calf is highly significant (p-value < 0.0001), the treatment effect is insignificant.  Given that the interaction is insignificant, we chose not to evaluate the *Differences of Least Squares Means* table, but we did include it in *Appendix C - Additional SAS Output* for the sake of transparency.
 
 
-![Fig-1](mix.1.png)
 
-![Fig-2](mix.ls.png)
+## ANCOVA Model
 
-
-**Linear Mixed Model for Final Calf Body Weight** The linear mixed model shows that Final Calf Body Weight is significantly higher for Steers (STR) compared to Heifers (HFR) (p\<0.05), but there are no significant differences between treatments (CON, DDG, MET) or their interactions with sex.
-The random effect for Sire contributes variance (237423742374), while Pen has negligible variance (000), indicating it does not affect body weight.
-Tukey HSD and pairwise comparisons confirm no significant differences between treatments within or across sexes (p\>0.05p \> 0.05p\>0.05).
-The high residual variance (124841248412484) suggests unaccounted variability, indicating that additional predictors might improve the model.
-Overall, treatment effects are not significant, but sex remains an important factor influencing final body weight.
-
-```{r, , fig.pos="H"}
-#| label: fig-OLS-mixed
-#| echo: false
-#| eval: false
-
-library(lme4)
-weight_model_6 <- lmer(Final.Calf.BW ~ Calan.Treatment * SEX + (1|Pen..) + (1|Sire), data = data2)
-summary(weight_model_6)
-
-# Perform Tukey HSD test
-library(multcomp)
-tukey_weight1 <- glht(weight_model_6, linfct = mcp(Calan.Treatment = "Tukey"))
-
-# Summarize the results
-summary(tukey_weight1)
-
-# Perform pairwise comparisons using emmeans
-library(emmeans)
-emm_weight <- emmeans(weight_model_6, ~ Calan.Treatment | SEX)
-pairs(emm_weight)
-```
-
-## ANCOVA Model for Final Calf Weight
-
-
+Another model that could fit the data is an ANCOVA model.  These models take a continuous dependent variable and takes at least one categorical variable along with a covariate.  For the dependent and categorical variables we will once again be the third trimester treatment and sex of the calf.  The covariate must be a continuous, independent variable that is not a primary interest of the study.   (@ancova).  We previously looked at the mother heifer's initial body weight in @fig-bodyweight-scatter so we will make that the covariate.
 
 
 
@@ -655,193 +611,11 @@ pairs(emm_weight)
 
 ![Fig-1](an.res-4.png)
 
-```{r, , fig.pos="H"}
-#| label: Scratch-work-2
-#| echo: false
-#| eval: false
 
-# Fit ANCOVA model
-ancova_model <- lm(Final.Calf.BW ~ Calan.Treatment * SEX + Initial.BW, data = data2)
-
-# Summarize the model
-summary(ancova_model)
-
-# Check assumptions
-par(mfrow = c(2, 2)) # Arrange diagnostic plots
-plot(ancova_model)
+## Recommended Model/Conclusion for Final Calf Body Weight
 
 
-
-```
-
-# If needed (for using later)
-
-## Model 1: LM for Final Calf Weight
-
-```{r, , fig.pos="H"}
-#| label: Scratch-work-3
-#| echo: false
-#| eval: false
-weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
-summary(weight_model_5)
-
-```
-
-**Comparison**
-
-```{r, , fig.pos="H"}
-#| label: Scratch-work-4
-#| echo: false
-#| eval: false
-
-# Ensure Calan.Treatment is a factor
-data2$Calan.Treatment <- as.factor(data2$Calan.Treatment)
-
-# Fit the linear model again (if not already fitted)
-weight_model_5 <- lm(Final.Calf.BW ~ Calan.Treatment * SEX, data = data2)
-
-# Perform Tukey HSD test
-library(multcomp)
-tukey_weight <- glht(weight_model_5, linfct = mcp(Calan.Treatment = "Tukey"))
-
-# Summarize the results
-summary(tukey_weight)
-
-
-
-```
-
-**Post Hoc Test**
-
-```{r, , fig.pos="H"}
-#| label: Scratch-work-5
-#| echo: false
-#| eval: false
-library(emmeans)
-
-# Estimated marginal means and pairwise comparisons
-emm <- emmeans(ancova_model, ~ Calan.Treatment | SEX)
-pairs(emm)
-
-```
-
-## 2. OLR Model
-
-```{r, , fig.pos="H"}
-#| label: Scratch-work-6
-#| echo: false
-#| eval: false
-library(MASS)
-
-# Convert Calf.Vigor to an ordered factor
-data$Calf.Vigor <- factor(data$Calf.Vigor, ordered = TRUE)
-
-# Fit the ordinal logistic regression model
-vigor_model <- polr(Calf.Vigor ~ Calan.Treatment * SEX + Initial.BW, data = data, Hess = TRUE)
-
-# Summarize the model
-summary(vigor_model)
-
-# Extract p-values for the coefficients
-coefs <- coef(summary(vigor_model))
-p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
-coefs <- cbind(coefs, "p-value" = p_values)
-print(coefs)
-
-
-```
-
-## 3. Binary Logistic Regression with GLM
-
-```{r, , fig.pos="H"}
-#| label: Scratch-work-7
-#| echo: false
-#| eval: false
-# Dichotomize Calf Vigor (example: low = 1, 2; high = 3, 4, 5)
-data$Calf.Vigor.Binary <- ifelse(data$Calf.Vigor %in% c(1, 2), "Low", "High")
-data$Calf.Vigor.Binary <- factor(data$Calf.Vigor.Binary, levels = c("Low", "High"))
-
-# Fit binary logistic regression
-vigor_model_glm <- glm(Calf.Vigor.Binary ~ Calan.Treatment * SEX + Initial.BW, 
-                       data = data, 
-                       family = binomial(link = "logit"))
-
-# Summarize the model
-summary(vigor_model_glm)
-
-```
-
-## WE NEED TO CUT OR SUMMARIZE THIS - Multinomial Logistic Regression for Calf Calving Ease
-
-The multinomial logistic regression model for Calving.Ease successfully converged, with a residual deviance of 58.42 and an AIC of 82.42, indicating moderate model fit.
-Extreme coefficients (e.g., −89.53 for Calan.TreatmentDDG) and large standard errors, especially for level 3, suggest data sparsity and instability in the estimates.
-Warnings for negative variance estimates point to multicollinearity or insufficient data for reliable interaction and treatment effect estimation.
-Post-hoc Tukey comparisons showed no significant differences between treatments (p=1.000), and missing standard errors (NaN) highlight issues with data variability.
-Overall, the model's results are unreliable due to data limitations, necessitating simplified modeling or alternative approaches.
-
-```{r}
-library(nnet)
-ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
-summary(ease_model_4)
-
-# Fit multinomial logistic regression model
-library(nnet)
-# Perform pairwise comparisons using estimated marginal means
-emm_ease <- emmeans(ease_model_4, ~ Calan.Treatment | SEX)
-pairs(emm_ease)
-
-```
-
-### Checking Assumption
-
-From VIF, Holding the assumptions for both model
-
-```{r}
-library(car)
-vif(ease_model_3)
-vif(ease_model_4)
-
-# Create a new dataset with predicted probabilities
-data2$predicted_probs <- predict(ease_model_3, type = "probs")
-
-
-library(ggplot2)
-ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
-  geom_point() +
-  geom_smooth(method = "loess", se = FALSE) +
-  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = OLR",
-       x = "Final Calf Body Weight",
-       y = "Predicted Probability")
-
-# Create a new dataset with predicted probabilities
-data2$predicted_probs <- predict(ease_model_4, type = "probs")
-
-# Choose one response level (e.g., "2") to plot against a continuous predictor (e.g., Initial BW)
-library(ggplot2)
-ggplot(data2, aes(x = Final.Calf.BW, y = predicted_probs[, 2])) +
-  geom_point() +
-  geom_smooth(method = "loess", se = FALSE) +
-  labs(title = "Partial Effect of Initial BW on Log-Odds of Calf.Vigor = MLR",
-       x = "Final Calf Body Weight",
-       y = "Predicted Probability")
-
-```
-
-# Equation Format
-
-## Model 1
-
-$$
-y_{ijklmn} = ENTER-MODEL-HERE
-$$
-
-where $y_{ijklm}$ represents the *dependent variable*, ...
-
-`![Picture of SAS Output](filename.png){width="3in"}`
-
-# Conclusion
-
-# Recomendation
+# Recomendation for Future Data Analysis
 
 \newpage
 
@@ -962,6 +736,21 @@ run;
 
 ## Binomial Regression Model for Calving Ease
 
-![*Association of Predicted Probabilities and Observed Responses* and *Odds Ratio Estimates and Wald COnfidence Intervals* tables.](Bin.eas-3.png)
+![*Association of Predicted Probabilities and Observed Responses* and *Odds Ratio Estimates and Wald Confidence Intervals* tables.](Bin.eas-3.png)
 
-![*Odds Ratios with 95% Wald COnfidence Limits* table.](Bin.eas-4.png)
+![*Odds Ratios with 95% Wald Confidence Limits* table.](Bin.eas-4.png)
+
+
+
+## Binomial Regression Model for Calf Vigor
+
+![*Fit Statistics* and other tests.](Bin.vig-1.png)
+
+![*Association of Predicted Probabilities and Observed Responses* and *Odds Ratio Estimates and Wald Confidence Intervals* tables.](Bin.vig-3.png)
+
+![*Odds Ratios with 95% Wald Confidence Limits* table.](Bin.vig-4.png)
+
+
+## Linear Mixed Model for Calf Final Body Weight
+
+![*Differences of Least Squares Means* table.](Mixed Diff.png)
