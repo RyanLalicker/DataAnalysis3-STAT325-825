@@ -457,26 +457,14 @@ Further output can be found in *Appendix D - Additional R Output*.  From this ou
 The Akaike Information Criterion (AIC) of 79.95121 evaluates the trade-off between the model's fit and complexity, with smaller AIC values indicating a more efficient model. 
 
 
-## Multinomial Logistic Regression (MLR)
+## Multinomial Logistic Regression
 
-In search of another model, we considered a multinomial logistic regression.  The model predicts Calving Ease based on third trimester treatment, sex of the calf, and their interaction.
+In search of another model, we considered a multinomial logistic regression.  The model predicts calving ease based on third trimester treatment, sex of the calf, and their interaction.  The output of the model can be found in *Appendix D - Additional R Output*.
 The model converged successfully after several iterations, with a residual deviance of 58.418 and an AIC of 82.418. It is indicating this may not be a good choice for the final the model.
 The coefficients, as seen in output below,  represent the log-odds of the calving ease levels relative to a reference category, but the large standard errors for interaction terms suggest potential numerical instability or sparse data for some levels.
 
 
-```{r,  fig.pos="H"}
-#| label: fig-MLR-Ease
-#| echo: false
-#| eval: true
-#| fig-cap: "Multinomial logistic regression output."
-
-library(nnet)
-ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
-summary(ease_model_4)
-
-```
-
-Another important thing is that multinomial logistic regression is designed to model nominal data, which is categorical data without an order.  (@Multi).
+An important point is that multinomial logistic regression is designed to model nominal data, which is categorical data without an order.  (@Multi).
 We could still choose this Model for our ordinal variable if it would be better fitting than OLR Model.
 For these reasons, we chose to go in another direction and not recommend this model.
 
@@ -1134,6 +1122,17 @@ run;
 ```{r}
 
 summary(ease_model_3)
+
+```
+
+
+## Multinomial logistic regression for Easing
+
+```{r}
+
+library(nnet)
+ease_model_4 <- multinom(Calving.Ease ~ Calan.Treatment * SEX, data = data2)
+summary(ease_model_4)
 
 ```
 
