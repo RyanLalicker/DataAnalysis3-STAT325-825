@@ -587,17 +587,19 @@ The *Type 3 Fixed Effects* table tells us what fixed effects, if any, are statis
 
 Another model that could fit the data is an ANCOVA model.  These models take a continuous dependent variable and takes at least one categorical variable along with a covariate.  For the dependent and categorical variables we will once again be the third trimester treatment and sex of the calf.  The covariate must be a continuous, independent variable that is not a primary interest of the study.   (@ancova).  We previously looked at the mother heifer's initial body weight in @fig-bodyweight-scatter so we will make that the covariate.
 
+Now we can view the output of this model after it was fit in SAS.  The first table in the figure below shows the sum of squares for the model.  By dividing the model sum of square by the corrected total sum of squares we can say the model accounts for approximately 26.75% of the variation in the final body weight variable.  
 
+![Model information along with Type I and Type III test results.](an.1.png)
 
-**SAS Output** 
+The last two tables show the results of the Type I and Type III sums of squares tables respectively.  We are more interested in the Type III sums of squares in this case.  Once again though, the interaction is insignificant and out of the two categorical explanatory variables only the sex of the calf has a significant main effect (p-value < 0.0001).  It should be noted that the effect of the initial body weight of the mother is significant as well (p-value=0.0022).
 
-![Fig-1](an.1.png)
+**I NEED HELP INTERPRETING GRAPHS**
 
 ![Fig-1](an.2.png)
 
 ![Fig-1](an.3.png)
 
-![Fig-1](an.4.png)
+
 
 ![Fig-1](an.5.png)
 
@@ -614,8 +616,17 @@ Another model that could fit the data is an ANCOVA model.  These models take a c
 
 ## Recommended Model/Conclusion for Final Calf Body Weight
 
+From the results of both models we can say the sex of the calf had a significant impact on the final body weight of the calf.  There was not a significant result for the third trimester treatment effects though.  
 
-# Recomendation for Future Data Analysis
+It is important to note that in the ANCOVA model, the initial body weight of the mother was deemed significant.  In the future including more models that account for this variable and others within the data set may give cattle producers a better idea of how to maximize the weight of their calves before slaughter.
+
+# Conclusion
+
+This dataset contained many missing values.  We ended up performing our analysis on only 84.17% of the original data.  Repeating our analysis methods with imputed data would allow for more of the data to be used and may lead to slightly different results.
+
+Additionally, future analysis of this data should attempt to control for more variables in the models.  In our final model, the ANCOVA model for the final body weight of the calves, we found information about the mother heifer, her body weight, had a significant impact on the model.  We were unable to apply this variable and others to additional models due to time constraints, but would recommend this to anyone working on this data in the future.
+
+
 
 \newpage
 
@@ -632,7 +643,170 @@ Another model that could fit the data is an ANCOVA model.  These models take a c
 #| label: appendix A
 #| echo: true
 #| eval: false
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(naniar)
+library(reshape2)
+library(GGally)
+library(janitor)
+library(emmeans)
+library(MASS)
+library(multcomp)
+library(lme4)
+library(nnet)
 
+data <- read.csv("data.csv")
+# Placeholder of original data
+origdata <- data
+data <- data %>%
+  mutate(across(everything(), ~ ifelse(. %in% c(".", ""), NA, .)))
+
+length(unique(na.omit(data$Sire)))
+length(unique(na.omit(data$Development.Treatment)))
+sum(rowSums(is.na(data)) > 0)
+rows_with_na <- sum(rowSums(is.na(data)) > 0)
+unique_entries <- unique(data$Calan.Treatment)
+num_unique <- length(unique_entries)
+frequency_table <- table(data$Calan.Treatment)
+
+gg_miss_var(data) +
+  ggtitle("Missing Data Distribution") +
+  theme_minimal()
+
+var_used <- c("Calan.Treatment", "SEX", "Calving.Ease", 
+              "Calf.Vigor", "Final.Calf.BW", "Pen..", "Initial.BW", "Sire")
+cleaned_data <- data[complete.cases(data[, var_used]), ]
+
+dep_vars <- c("Calving.Ease", "Calf.Vigor", "Final.Calf.BW")
+
+custom_names <- c("Calving Ease", "Calf Vigor", "Final Calf Weight")
+
+cleaned_data$Calving.Ease <- as.numeric(cleaned_data$Calving.Ease)
+cleaned_data$Calf.Vigor <- as.numeric(cleaned_data$Calf.Vigor)
+cleaned_data$Final.Calf.BW <- as.numeric(cleaned_data$Final.Calf.BW)
+
+calc_stats <- function(var) {
+  mean_val <- mean(var, na.rm = TRUE)
+  median_val <- median(var, na.rm = TRUE)
+  sd_val <- sd(var, na.rm = TRUE)
+  quantiles <- quantile(var, probs = c(0.25, 0.75), na.rm = TRUE)
+  max <- max(var, na.rm = TRUE)
+  min <- min(var, na.rm = TRUE)
+  c(mean = mean_val, median = median_val, sd = sd_val, 
+    Q1 = quantiles[1], Q3 = quantiles[2], Min = min, Max = max)
+}
+
+summary_table <- t(sapply(dep_vars, function(var) calc_stats(cleaned_data[[var]])))
+
+summary_table <- as.data.frame(summary_table)
+
+kable(summary_table, col.names = c("Variable", "Mean", 
+                                   "Median", "SD", "25th Percentile", 
+                                   "75th Percentile", "Min", "Max"), 
+      caption = "Summary Statistics for Dependent Variables")
+
+bin_width <- round(2*IQR(cleaned_data$Final.Calf.BW)/(length(cleaned_data$Final.Calf.BW))^(1/3), 2)
+
+ggplot(cleaned_data, aes(x = Final.Calf.BW)) +
+  geom_histogram(binwidth = bin_width, color = "black", fill = "skyblue") +
+  labs(
+    x = "Weight",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+ggplot(cleaned_data, aes(sample = Final.Calf.BW)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+ggplot(cleaned_data, aes(x = Calving.Ease)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
+  labs(
+    x = "Ease Score",
+    y = "Frequency"
+  )+
+  theme_minimal()
+
+ggplot(cleaned_data, aes(x = Calf.Vigor)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "skyblue") +
+  labs(
+    x = "Vigor Score",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+data2 <- cleaned_data
+
+crosstab_treatment_sex <- table(data2$Calan.Treatment, data2$SEX)
+
+kable(
+  crosstab_treatment_sex)
+
+chi_sq_test <- chisq.test(crosstab_treatment_sex)
+chi_sq_table <- data.frame(
+  Metric = c("Statistic", "Degrees of Freedom", "P-Value"),
+  Value = c(round(chi_sq_test$statistic, 2), 
+            chi_sq_test$parameter, 
+            format.pval(chi_sq_test$p.value)),
+  stringsAsFactors = FALSE
+)
+
+kable(chi_sq_table, align = c("l", "c"), row.names = FALSE)
+
+ggplot(data2, aes(x = Calan.Treatment, y = Final.Calf.BW, fill = SEX)) +
+  geom_boxplot(outlier.color = "red", alpha = 0.7) +
+  labs(title = "Boxplot of Final Calf Body Weight by Treatment and Sex", x = "Treatment", y = "Final Body Weight") +
+  theme_minimal()
+
+data2$Initial.BW <- as.numeric(data2$Initial.BW)
+
+ggplot(data2, aes(x = Calving.Ease, y = Initial.BW, 
+                  color = SEX, shape = Calan.Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(x = "Calving Ease", y = "Initial Body Weight of Heifer") +
+  theme_minimal()
+
+ggplot(data2, aes(x = Calf.Vigor, y = Initial.BW, 
+                  color = SEX, shape = Calan.Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(x = "Calf Vigor", y = "Initial Body Weight of Heifer") +
+  theme_minimal()
+
+data2$Calving.Ease <- factor(data2$Calving.Ease, ordered = TRUE)
+
+ease_model_3 <- polr(Calving.Ease ~ Calan.Treatment * SEX, 
+                     data = data2, Hess = TRUE)
+
+#summary(ease_model_3)
+
+coefs <- coef(summary(ease_model_3))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+
+kable(coefs, 
+      digits = 3,  
+      format = "markdown")
+
+data2$Calf.Vigor <- factor(data2$Calf.Vigor, ordered = TRUE)
+
+vigor_model_1 <- polr(Calf.Vigor ~ Calan.Treatment * SEX, data = data2, Hess = TRUE)
+
+#summary(vigor_model_1)
+
+# Extract p-values
+coefs <- coef(summary(vigor_model_1))
+p_values <- pnorm(abs(coefs[, "t value"]), lower.tail = FALSE) * 2  # Two-tailed p-values
+coefs <- cbind(coefs, "p-value" = p_values)
+#print(coefs)
+kable(coefs, 
+      digits = 3,  
+      format = "markdown")
 ```
 
 \newpage
@@ -754,3 +928,8 @@ run;
 ## Linear Mixed Model for Calf Final Body Weight
 
 ![*Differences of Least Squares Means* table.](Mixed Diff.png)
+
+
+## ANCOVA for Calf Final Body Weight
+
+![Tukey's HSD test and comparisons for ANCOVA model.](an.4.png)
